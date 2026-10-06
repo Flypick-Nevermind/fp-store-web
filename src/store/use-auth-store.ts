@@ -38,7 +38,7 @@ export const useAuthStore = create<AuthState>()(
           BRANDING.defaultWarehouseCode,
           "Ahmad Fikri",
         ),
-        createdAt: new Date().toISOString(),
+        createdAt: "2026-10-04T00:00:00.000Z",
       },
       isAuthenticated: true,
 

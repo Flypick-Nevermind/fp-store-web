@@ -3,6 +3,7 @@
 import { Compass, PlaneTakeoff, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { BrandLogo } from "@/components/branding/brand-logo";
 import { BRANDING } from "@/config/branding";
 import { cn } from "@/lib/utils";
@@ -11,8 +12,16 @@ import { useCartStore } from "@/store/use-cart-store";
 
 export function Navbar() {
   const pathname = usePathname();
-  const itemCount = useCartStore((s) => s.getItemCount());
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const rawItemCount = useCartStore((s) => s.getItemCount());
   const user = useAuthStore((s) => s.user);
+
+  const itemCount = isMounted ? rawItemCount : 0;
 
   return (
     <header className="sticky top-0 z-40 w-full bg-[#FFF8E1] border-b-2 border-[#1A1A24] shadow-[0_2px_0_0_#2323FF]">
@@ -106,8 +115,11 @@ export function Navbar() {
               <span className="font-mono text-[9px] uppercase tracking-wider text-[#1A1A24]/60">
                 LUGGAGE PASS
               </span>
-              <span className="font-mono text-xs font-black text-[#2323FF]">
-                {user ? user.warehouseCode : "MASUK"}
+              <span
+                suppressHydrationWarning
+                className="font-mono text-xs font-black text-[#2323FF]"
+              >
+                {isMounted && user ? user.warehouseCode : "MASUK"}
               </span>
             </div>
           </Link>
