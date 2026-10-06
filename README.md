@@ -15,12 +15,13 @@
 ## 📋 Daftar Isi
 1. [Tentang FLYPICK](#-tentang-flypick)
 2. [Desain Sistem & Travel-Paper Aesthetic](#-desain-sistem--travel-paper-aesthetic)
-3. [Fitur Utama & E2E Flows](#-fitur-utama--e2e-flows)
-4. [Tech Stack & Tooling](#-tech-stack--tooling)
-5. [Struktur Direktori](#-struktur-direktori)
-6. [Instalasi & Menjalankan Proyek](#-instalasi--menjalankan-proyek)
-7. [Alur Bisnis 2-Tahap (Stage 1 & Stage 2)](#-alur-bisnis-2-tahap-stage-1--stage-2)
-8. [Script yang Tersedia](#-script-yang-tersedia)
+3. [Alur Bisnis & Pembayaran 2-Tahap (Two-Stage Model)](#-alur-bisnis--pembayaran-2-tahap-two-stage-model)
+4. [Fitur Utama & E2E Customer Flow](#-fitur-utama--e2e-customer-flow)
+5. [Tech Stack & Tooling](#-tech-stack--tooling)
+6. [Struktur Direktori (Atomic Design)](#-struktur-direktori-atomic-design)
+7. [Instalasi & Menjalankan Proyek](#-instalasi--menjalankan-proyek)
+8. [Panduan Deploy ke Vercel](#-panduan-deploy-ke-vercel)
+9. [Script yang Tersedia](#-script-yang-tersedia)
 
 ---
 
@@ -29,7 +30,7 @@
 **FLYPICK** adalah platform web modern untuk layanan jasa titip (Jastip) dan freight forwarding lintas negara yang menjembatani pembelian barang dari marketplace Tiongkok (**Taobao, Tmall, dan 1688**) ke Indonesia tanpa kendala bahasa, rekening valuta asing (RMB/Alipay), maupun perizinan bea cukai.
 
 Platform ini menerapkan model **dua layanan utama (Dual-Service)**:
-- **Titip Dibeliin (Buy For Me):** Pengguna cukup menempelkan tautan produk Tiongkok. Tim gudang FLYPICK di Shanghai yang membelikan dan mengurus pembayaran seller.
+- **Titip Dibeliin (Buy For Me):** Pengguna cukup menempelkan tautan produk Tiongkok. Tim buyer FLYPICK di Shanghai yang membelikan dan mengurus pembayaran seller.
 - **Titip Kirim (Self-Checkout Forwarding):** Pengguna berbelanja mandiri di marketplace Tiongkok dengan alamat Gudang Shanghai milik FLYPICK, kemudian mendaftarkan nomor resi lokal China ke sistem konsolidasi.
 
 ---
@@ -40,7 +41,7 @@ FLYPICK dirancang dengan identitas visual bertema **Travel Paper / Flight Boardi
 
 - **Color Palette & Design Tokens:**
   - `Cream` (`#FFF8E1`): Latar belakang canvas kertas tiket vintage.
-  - `Neon Blue` (`#2323FF`): Garis pembatas boarding pass, badge status kargo, dan heading bertegangan tinggi.
+  - `Neon Blue` (`#2323FF`): Garis pembatas boarding pass, badge status kargo, dan heading utama.
   - `Electric Blue` (`#00F0FF`): Aksen glow, tombol aksi interaktif, dan status pelacakan aktif.
   - `Dark Charcoal` (`#1A1A24`): Tipografi tajam berkontras tinggi dan aksen stempel stensil.
   - `Surface` (`#FFFFFF`): Badan kartu dan input formulir.
@@ -48,22 +49,66 @@ FLYPICK dirancang dengan identitas visual bertema **Travel Paper / Flight Boardi
   - Potongan lekuk tiket semi-lingkaran (*cutout notches*).
   - Garis sobek perforasi putus-putus (*dashed tear-off lines*).
   - Barcode realistis monospaced untuk tanda pengenal kargo (*airport barcodes*).
-  - Rubber stamp stensil status penerbangan kargo (*"100% BEBAS REDLINE"*, *"PHOTO QC SHANGHAI"*).
+  - Rubber stamp stensil status kargo (*"100% BEBAS REDLINE"*, *"PHOTO QC SHANGHAI"*, *"LUNAS - CARGO RELEASED"*).
   - Kartu label koper (*Luggage tag with eyelet punch ring*).
 
 ---
 
-## 🚀 Fitur Utama & E2E Flows
+## 💡 Alur Bisnis & Pembayaran 2-Tahap (Two-Stage Model)
 
-### Screen 1: Login & Virtual Warehouse Pass
+FLYPICK menerapkan model penagihan 2 tahap yang adil dan transparan: ongkir kargo internasional **tidak ditebak di awal**, melainkan dihitung berdasarkan **timbangan digital fisik riil** di gudang Shanghai FTZ setelah barang lolos inspeksi QC.
+
+### Diagram Alur Operasional E2E
+
+```mermaid
+flowchart TD
+    subgraph S1 [TAHAP 1: CHECKOUT & PEMBELIAN]
+        A[Customer Input URL / Resi] --> B[Masuk Keranjang Konsolidasi]
+        B --> C[Checkout: Alamat & Pilihan Jalur Kargo]
+        C --> D[Bayar Tahap 1: Harga Barang + Fee Shanghai + Add-ons]
+        D --> E[Status: Order Placed]
+    end
+
+    subgraph S2 [OPERASIONAL CHINA & INSPEKSI]
+        E --> F[Purchased / Inbound: Paket Dikirim ke Shanghai]
+        F --> G[Arrived at China Hub: Gudang Pudong FTZ]
+        G --> H[Unboxing & Photo QC: Bukti Foto & Checklist]
+        H --> I[Penimbangan Digital Riil: Contoh 1.15 kg]
+    end
+
+    subgraph S3 [TAHAP 2: PELUNASAN KARGO & DISPATCH]
+        I --> J[Invoice Tahap 2 Diterbitkan: 1.15 kg x Tarif Kargo]
+        J --> K[Customer Bayar Tahap 2 via QRIS / VA]
+        K --> L[Status: LUNAS - CARGO RELEASED]
+        L --> M[Penerbangan PVG ke CGK & Customs Clearance]
+        M --> N[Dispatched ke Ekspedisi Lokal]
+        N --> O[Delivered: Paket Sampai di Alamat Rumah]
+    end
+```
+
+### Rincian Perbandingan Tagihan
+
+| Komponen | Pembayaran Tahap 1 (Checkout) | Pembayaran Tahap 2 (Setelah QC Shanghai) |
+| :--- | :--- | :--- |
+| **Waktu Penagihan** | Saat membuat pesanan di web | Saat barang tiba & ditimbang di Gudang Shanghai (PVG-01) |
+| **Item Tagihan** | • Nilai Barang (CNY ➔ IDR)<br>• Shanghai Handling Fee (Rp 15.000/item)<br>• Add-ons (Photo QC Rp 10.000, Extra Bubble Wrap Rp 12.000) | • Ongkir Kargo: `Berat Riil (kg) × Tarif/kg`<br>• Pajak Impor & Bea Masuk (All-in)<br>• Pengiriman Ekspedisi Lokal ke Rumah |
+| **Tarif Kargo** | *Belum ditagihkan (hanya estimasi)* | • **Air Express:** Rp 165.000 / kg (7–10 Hari)<br>• **Sea Economy:** Rp 45.000 / kg (20–28 Hari) |
+| **Metode Bayar** | QRIS (Semua E-Wallet) / Virtual Account | QRIS (Semua E-Wallet) / Virtual Account |
+| **Efek Pelunasan** | Tiket pesanan diterbitkan & masuk antrean pembelian | Dokumen SPPB kargo rilis & diserahkan ke kurir domestik |
+
+---
+
+## 🚀 Fitur Utama & E2E Customer Flow
+
+### Screen 1: Login & Virtual Warehouse Pass (`/`)
 - **WhatsApp OTP Modal:** Simulasi autentikasi OTP WhatsApp via TanStack React Query (`useMutation`) dengan kode uji cepat (`888888`) serta dukungan Google OAuth.
 - **Virtual Warehouse Luggage Card:**
   - Kartu tanda pengenal gudang Shanghai berdesain tag koper.
-  - Menyediakan kode gudang unik pengguna (contoh: `FP-8821`).
+  - Kode gudang unik pengguna (contoh: `FP-8821`).
   - Alamat lengkap Shanghai Pudong Free Trade Zone (Bahasa Mandarin & Inggris).
   - Fitur **1-Klik Salin Alamat Gudang** ke clipboard dengan notifikasi toast.
 
-### Screen 2: Intake Hub & Keranjang Konsolidasi
+### Screen 2: Intake Hub & Keranjang Konsolidasi (`/` & `/cart`)
 - **Segmented Dual Tab:**
   - **Tab 1: Titip Dibeliin:** Input tautan Taobao/1688 dengan simulasi scraper metadata otomatis (`useScrapeProductMutation`), konversi kurs live CNY ➔ IDR (`¥1 = Rp 2.250`), varian warna/ukuran, dan kuantitas.
   - **Tab 2: Titip Kirim:** Input nomor resi domestik China (`SF...`, `YT...`), pemilihan kategori kargo (`FASHION`, `ELECTRONICS`, `BEAUTY`, dll.), dan deklarasi nilai barang.
@@ -72,18 +117,14 @@ FLYPICK dirancang dengan identitas visual bertema **Travel Paper / Flight Boardi
   - Badge pembeda jelas: `[TITIP DIBELIIN]` vs `[TITIP KIRIM]`.
   - Kontrol penyesuaian kuantitas & kalkulator subtotal dinamis.
 
-### Screen 3: Order Checkout & Pembayaran Tahap 1
+### Screen 3: Order Checkout & Pembayaran Tahap 1 (`/checkout`)
 - **Step 1:** Formulir alamat pengiriman penerima Indonesia tervalidasi skema Zod.
-- **Step 2:** Pemilihan jalur kargo internasional:
-  - **Air Express Flight Cargo (7–10 Hari Kerja)** — Rp 165.000/kg.
-  - **Sea Economy Container Liner (20–28 Hari Kerja)** — Rp 45.000/kg.
-- **Step 3:** Layanan tambahan (*Add-ons*):
-  - Photo QC & Inspeksi Fisik di Shanghai.
-  - Ekstra Bubble Wrap 3 Lapis & Lakban Kuning.
-- **Step 4:** Ringkasan Invoice Tahap 1 (Harga Barang + Handling Fee) disertai **Disclaimer pelunasan ongkir kargo internasional (Tahap 2)**.
-- **Mock Payment Modal:** Simulasi gateway pembayaran via QRIS (semua e-wallet) atau BCA Virtual Account dengan efek perayaan konfeti dan penerbitan tiket pesanan.
+- **Step 2:** Pemilihan jalur kargo internasional (Air Express vs Sea Economy).
+- **Step 3:** Layanan tambahan (*Add-ons*): Photo QC Shanghai & Ekstra Bubble Wrap 3 Lapis.
+- **Step 4:** Ringkasan Invoice Tahap 1 (Harga Barang + Handling Fee) disertai disclaimer pelunasan kargo Tahap 2.
+- **Payment Modal Tahap 1:** Simulasi gateway QRIS / Virtual Account dengan efek perayaan konfeti dan penerbitan tiket pesanan.
 
-### Screen 4: Profil & 7-Stage Live Tracking Stepper
+### Screen 4: Profil, 7-Stage Live Tracking & Pelunasan Tahap 2 (`/profile`)
 - **Stepper 7 Tahap Operasional Logistik:**
   1. `[Order Placed]` — Pesanan dibuat & invoice tahap 1 terverifikasi.
   2. `[Purchased/Inbound]` — Pembelian ke merchant / resi domestik menuju Shanghai.
@@ -93,9 +134,11 @@ FLYPICK dirancang dengan identitas visual bertema **Travel Paper / Flight Boardi
   6. `[Dispatched]` — Serah terima ke ekspedisi lokal rute kota tujuan.
   7. `[Delivered]` — Paket diterima di tangan pemesan.
 - **Laporan Photo QC Unboxing:**
-  - Ditampilkan saat paket tiba di Gudang China (`Arrived at China Hub` ke atas).
-  - Menampilkan foto unboxing beresolusi tinggi, timbangan berat aktual (`1.15 kg`), dimensi paket (`32 x 24 x 12 cm`), stempel petugas QC (`Wang Lin, PVG-QC-07`), checklist fisik, dan catatan inspektur.
-- **Log Manifest Aktivitas:** Riwayat linimasa logistik dengan waktu dan koordinat lokasi.
+  - Bukti foto unboxing resolusi tinggi, timbangan berat aktual (`1.15 kg`), dimensi paket (`32 x 24 x 12 cm`), stempel petugas QC (`Wang Lin, PVG-QC-07`), checklist fisik, dan catatan inspektur.
+- **Terminal Pembayaran Pelunasan Tahap 2:**
+  - Banner tagihan pelunasan kargo otomatis (`1.15 kg × Rp 165.000 = Rp 189.750`).
+  - Tombol **"Bayar Pelunasan Tahap 2"** membuka modal interaktif QRIS/VA.
+  - Simulasi pembayaran sukses memicu animasi konfeti, stempel karet **`LUNAS - CARGO RELEASED`**, serta membuka rilis SPPB bea cukai ke ekspedisi lokal.
 
 ---
 
@@ -116,13 +159,13 @@ FLYPICK dirancang dengan identitas visual bertema **Travel Paper / Flight Boardi
 
 ---
 
-## 📁 Struktur Direktori
+## 📁 Struktur Direktori (Atomic Design)
 
 ```text
 fp-store-web/
 ├── public/                 # Aset statis & logo placeholder
 ├── src/
-│   ├── app/                # Clean Route Handlers (Setiap page hanya 5 baris, mendelegasikan ke template)
+│   ├── app/                # Clean Route Handlers (~5 baris per file, delegasi ke template)
 │   │   ├── page.tsx        # / -> LandingTemplate
 │   │   ├── cart/page.tsx   # /cart -> CartTemplate
 │   │   ├── checkout/page.tsx # /checkout -> CheckoutTemplate
@@ -130,17 +173,19 @@ fp-store-web/
 │   │   ├── globals.css     # Theme tokens, ticket notches, & barcode CSS
 │   │   └── layout.tsx      # Root layout, font Geist, Query & Toast providers
 │   ├── components/
-│   │   ├── atoms/          # Atomic Design: Button, Badge, Barcode, BrandLogo, Input, RubberStamp, TicketDivider
-│   │   ├── molecules/      # Atomic Design: CurrencyCalcBox, AddressCopyRow, QtyControl, EmptyState
-│   │   ├── organisms/      # Atomic Design: HeroFlightBanner, IntakeTabs, CartItemCard, CartSummary,
-│   │   │                   #                AddressStep, FreightStep, AddOnsStep, InvoiceSummary, PaymentModal,
-│   │   │                   #                VirtualWarehouseCard, TrackingStepper, QcUnboxingCard, OrderTimeline, Navbar, Footer
-│   │   └── templates/      # Atomic Design: LandingTemplate, CartTemplate, CheckoutTemplate, ProfileTemplate
+│   │   ├── atoms/          # Atomic: Button, Badge, Barcode, BrandLogo, Input, RubberStamp, TicketDivider
+│   │   ├── molecules/      # Atomic: CurrencyCalcBox, AddressCopyRow, QtyControl, EmptyState
+│   │   ├── organisms/      # Atomic: HeroFlightBanner, IntakeTabs, CartItemCard, CartSummary,
+│   │   │                   #         AddressStep, FreightStep, AddOnsStep, InvoiceSummary, PaymentModal,
+│   │   │                   #         VirtualWarehouseCard, TrackingStepper, QcUnboxingCard, 
+│   │   │                   #         Stage2PaymentCard, Stage2PaymentModal, OrderTimeline, Navbar, Footer
+│   │   └── templates/      # Atomic: LandingTemplate, CartTemplate, CheckoutTemplate, ProfileTemplate
 │   ├── hooks/              # Decoupled Business Logic Hooks:
 │   │   ├── use-buy-for-me-form.ts   # Scraper logic, Taobao link handling, & validation
 │   │   ├── use-forwarding-form.ts   # China tracking manifests, courier presets, & declared value
 │   │   ├── use-cart-actions.ts      # Cart store selectors, quantity operations, & subtotal IDR/CNY
 │   │   ├── use-checkout-flow.ts     # Multi-step state, add-ons toggles, fees, & payment triggers
+│   │   ├── use-stage2-payment.ts    # Stage 2 freight balance modal, calculations, & payment actions
 │   │   ├── use-warehouse-pass.ts    # Shanghai warehouse address clipboard & toast copy actions
 │   │   ├── use-order-tracking.ts    # Order history, timeline expansion, & login modal toggles
 │   │   ├── use-scrape-product.ts    # Simulated marketplace metadata scraping
@@ -152,8 +197,8 @@ fp-store-web/
 │   ├── store/              # Zustand persistent stores (useAuthStore, useCartStore, useCheckoutStore)
 │   └── types/              # Inferred domain TypeScript interfaces
 ├── biome.json              # Konfigurasi Biome linter & formatter
-├── next.config.ts          # Konfigurasi Next.js
-├── package.json            # Daftar dependensi & npm scripts
+├── next.config.ts          # Konfigurasi Next.js (remote patterns foto unboxing & QRIS)
+├── package.json            # Dependensi & npm scripts
 └── tsconfig.json           # Konfigurasi TypeScript
 ```
 
@@ -181,28 +226,24 @@ Buka peramban di: **`http://localhost:3000`** *(atau port yang dialokasikan oleh
 
 ---
 
-## 💡 Alur Bisnis 2-Tahap (Stage 1 & Stage 2)
+## 🚀 Panduan Deploy ke Vercel
 
-FLYPICK menggunakan sistem penagihan transparan 2 tahap agar pelanggan hanya membayar biaya kargo yang sesuai dengan berat riil:
+### Metode 1: Lewat Web Dashboard Vercel (Rekomendasi CI/CD Otomatis)
+1. Buka [**vercel.com**](https://vercel.com/) dan masuk menggunakan akun GitHub Anda.
+2. Klik tombol **"Add New..."** ➔ **"Project"**.
+3. Cari repositori **`Flypick-Nevermind/fp-store-web`**, lalu klik **"Import"**.
+4. Biarkan konfigurasi default (*Framework: Next.js*, *Root Directory: ./*, *Build Command: next build*).
+5. Klik **"Deploy"**. Dalam ~1 menit, aplikasi siap diakses di URL produksi!
+6. Setiap commit yang di-*push* ke branch `main` akan di-deploy secara otomatis.
 
-```mermaid
-flowchart LR
-    A[Input Barang / Resi] --> B[Pembayaran Tahap 1]
-    B --> C[Inspeksi & QC Shanghai]
-    C --> D[Penimbangan Aktual]
-    D --> E[Tagihan Tahap 2]
-    E --> F[Terbang PVG➔CGK]
-    F --> G[Diterima di Rumah]
+### Metode 2: Lewat Vercel CLI (Terminal)
+```bash
+# Login & Deploy Preview
+npx vercel
+
+# Deploy Langsung ke Production
+npx vercel --prod
 ```
-
-1. **Tagihan Tahap 1 (Awal):**
-   - Nilai barang yang ditalangkan ke merchant Tiongkok (konversi CNY ➔ IDR).
-   - Biaya jasa handling konsolidasi Shanghai (Rp 15.000 / paket).
-   - Layanan proteksi tambahan opsional (Photo QC: Rp 10.000, Bubble Wrap: Rp 12.000).
-2. **Tagihan Tahap 2 (Setelah Tiba di Shanghai):**
-   - Dihitung transparan berdasarkan **berat aktual per kilogram** setelah seluruh paket tiba di Shanghai Hub dan di-packing ulang.
-   - Air Express: Mulai Rp 165.000/kg (7–10 Hari).
-   - Sea Economy: Mulai Rp 45.000/kg (20–28 Hari).
 
 ---
 
