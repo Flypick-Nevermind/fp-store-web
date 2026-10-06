@@ -7,6 +7,8 @@ export * from "@/components/layout/navbar";
 export * from "@/components/profile/login-modal";
 export * from "@/components/profile/order-timeline";
 export * from "@/components/profile/qc-unboxing-card";
+export * from "@/components/profile/stage2-payment-card";
+export * from "@/components/profile/stage2-payment-modal";
 export * from "@/components/profile/tracking-stepper";
 export * from "./buy-for-me-form";
 export * from "./cart-item-card";

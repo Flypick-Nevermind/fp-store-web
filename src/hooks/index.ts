@@ -5,4 +5,5 @@ export * from "./use-checkout-flow";
 export * from "./use-forwarding-form";
 export * from "./use-order-tracking";
 export * from "./use-scrape-product";
+export * from "./use-stage2-payment";
 export * from "./use-warehouse-pass";

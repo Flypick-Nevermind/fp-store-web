@@ -69,6 +69,8 @@ export interface TimelineEvent {
   isCurrent?: boolean;
 }
 
+export type StagePaymentStatus = "PENDING" | "PAID";
+
 export interface OrderRecord {
   id: string; // Order reference, e.g. 'FP-ORD-882190'
   trackingCode: string;
@@ -79,7 +81,11 @@ export interface OrderRecord {
   shippingMethod: ShippingMethod;
   addOns: AddOns;
   stage1Amount: number;
+  stage1PaymentStatus: StagePaymentStatus;
   stage2EstimatedAmount: number;
+  stage2ActualAmount: number;
+  stage2PaymentStatus: StagePaymentStatus;
+  stage2PaidAt?: string;
   currentStage: OrderOperationalStage;
   timeline: TimelineEvent[];
   qcData?: QcInspectionData;

@@ -12,8 +12,11 @@ import {
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Barcode } from "@/components/ui/barcode";
+import { useStage2Payment } from "@/hooks/use-stage2-payment";
 import { formatIdr } from "@/lib/utils";
 import type { OrderRecord } from "@/types";
+import { Stage2PaymentCard } from "./stage2-payment-card";
+import { Stage2PaymentModal } from "./stage2-payment-modal";
 import { TrackingStepper } from "./tracking-stepper";
 
 interface OrderTimelineProps {
@@ -24,6 +27,18 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(
     orders[0]?.id || null,
   );
+
+  const {
+    activeOrder,
+    isModalOpen,
+    paymentMethod,
+    setPaymentMethod,
+    isProcessing,
+    isPaid,
+    openPaymentModal,
+    closePaymentModal,
+    handleSimulatePayment,
+  } = useStage2Payment();
 
   if (orders.length === 0) {
     return (
@@ -123,8 +138,14 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
             </div>
 
             {/* 7-Stage Operational Stepper & Mock QC Unboxing */}
-            <div className="p-4 sm:p-6 bg-[#F9F7F1]/50 border-b-2 border-dashed border-[#1A1A24]/20">
+            <div className="p-4 sm:p-6 bg-[#F9F7F1]/50 border-b-2 border-dashed border-[#1A1A24]/20 space-y-6">
               <TrackingStepper order={order} />
+
+              {/* Stage 2 International Freight & Customs Payment Card */}
+              <Stage2PaymentCard
+                order={order}
+                onOpenPaymentModal={() => openPaymentModal(order)}
+              />
             </div>
 
             {/* Detailed Timeline Events View */}
@@ -262,6 +283,18 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
           </div>
         );
       })}
+
+      {/* Stage 2 Payment Modal */}
+      <Stage2PaymentModal
+        isOpen={isModalOpen}
+        order={activeOrder}
+        paymentMethod={paymentMethod}
+        setPaymentMethod={setPaymentMethod}
+        isProcessing={isProcessing}
+        isPaid={isPaid}
+        onClose={closePaymentModal}
+        onConfirmPay={handleSimulatePayment}
+      />
     </div>
   );
 }

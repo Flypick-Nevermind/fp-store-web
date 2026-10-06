@@ -29,6 +29,7 @@ interface CheckoutState {
   setPaymentStatus: (status: PaymentStatus) => void;
   setDeliveryAddress: (address: DeliveryAddress) => void;
   createOrder: (items: CartItem[], stage1Amount: number) => OrderRecord;
+  payStage2: (orderId: string) => void;
   getOrderById: (id: string) => OrderRecord | undefined;
 }
 
@@ -92,7 +93,10 @@ const INITIAL_MOCK_ORDER: OrderRecord = {
   shippingMethod: "AIR_EXPRESS",
   addOns: { photoQc: true, extraBubbleWrap: true },
   stage1Amount: 313000,
+  stage1PaymentStatus: "PAID",
   stage2EstimatedAmount: 189750, // 1.15kg * 165000
+  stage2ActualAmount: 189750,
+  stage2PaymentStatus: "PENDING", // Ready to be paid by user in Screen 4!
   currentStage: "IN_TRANSIT_PVG_CGK",
   qcData: MOCK_QC_DATA,
   timeline: [
@@ -118,7 +122,7 @@ const INITIAL_MOCK_ORDER: OrderRecord = {
       stage: "ARRIVED_CHINA_HUB",
       title: "Arrived at China Hub (Tiba di Gudang Shanghai)",
       description:
-        "Paket diterima di Pudong FTZ Hub (PVG-01). Penimbangan aktual: 1.15 kg. Photo QC unboxing selesai.",
+        "Paket diterima di Pudong FTZ Hub (PVG-01). Penimbangan aktual: 1.15 kg. Photo QC unboxing selesai. Invoice Tahap 2 diterbitkan.",
       timestamp: "05 Okt 2026, 11:20 WIB",
       location: "Shanghai Pudong Hub (PVG-01)",
       isCompleted: true,
@@ -127,7 +131,7 @@ const INITIAL_MOCK_ORDER: OrderRecord = {
       stage: "IN_TRANSIT_PVG_CGK",
       title: "In Transit PVG ➔ CGK (Penerbangan Kargo Udara)",
       description:
-        "Paket telah dimuat ke penerbangan kargo Boeing 777F rute Shanghai (PVG) ke Jakarta (CGK).",
+        "Paket telah dimuat ke penerbangan kargo Boeing 777F rute Shanghai (PVG) ke Jakarta (CGK). Menunggu pelunasan Tahap 2 untuk rilis langsung ke kurir.",
       timestamp: "06 Okt 2026, 03:15 WIB",
       location: "Airspace Cargo Flight",
       isCompleted: false,
@@ -204,8 +208,6 @@ export const useCheckoutStore = create<CheckoutState>()(
           minute: "2-digit",
         });
 
-        // 7 exact operational stages:
-        // [Order Placed] -> [Purchased/Inbound] -> [Arrived at China Hub] -> [In Transit PVG➔CGK] -> [Customs Clearance] -> [Dispatched] -> [Delivered]
         const timeline: TimelineEvent[] = [
           {
             stage: "ORDER_PLACED",
@@ -289,10 +291,12 @@ export const useCheckoutStore = create<CheckoutState>()(
           shippingMethod: state.shippingMethod,
           addOns: state.addOns,
           stage1Amount,
+          stage1PaymentStatus: "PAID",
           stage2EstimatedAmount: stage2Estimated,
+          stage2ActualAmount: stage2Estimated,
+          stage2PaymentStatus: "PENDING",
           currentStage: "ORDER_PLACED",
           timeline,
-          // Newly placed order doesn't have QC yet, but mock QC unboxing card can show when arrived
           qcData: state.addOns.photoQc ? MOCK_QC_DATA : undefined,
         };
 
@@ -304,6 +308,39 @@ export const useCheckoutStore = create<CheckoutState>()(
         }));
 
         return newOrder;
+      },
+
+      payStage2: (orderId: string) => {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString("id-ID", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        set((state) => ({
+          orders: state.orders.map((order) => {
+            if (order.id !== orderId) return order;
+            return {
+              ...order,
+              stage2PaymentStatus: "PAID",
+              stage2PaidAt: `${dateStr} WIB`,
+              timeline: order.timeline.map((event) => {
+                if (event.stage === "CUSTOMS_CLEARANCE") {
+                  return {
+                    ...event,
+                    description:
+                      "Pelunasan Tahap 2 diterima. Dokumen SPPB kargo rilis dari bea cukai Bandara CGK.",
+                    isCompleted: true,
+                  };
+                }
+                return event;
+              }),
+            };
+          }),
+        }));
       },
 
       getOrderById: (id) => {
