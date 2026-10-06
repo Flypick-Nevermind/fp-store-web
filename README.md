@@ -122,36 +122,35 @@ FLYPICK dirancang dengan identitas visual bertema **Travel Paper / Flight Boardi
 fp-store-web/
 ├── public/                 # Aset statis & logo placeholder
 ├── src/
-│   ├── app/
-│   │   ├── cart/page.tsx   # Screen 2: Keranjang konsolidasi
-│   │   ├── checkout/       # Screen 3: Alamat, freight, & pembayaran tahap 1
-│   │   ├── profile/        # Screen 1 & 4: Virtual warehouse pass & live tracking
+│   ├── app/                # Clean Route Handlers (Setiap page hanya 5 baris, mendelegasikan ke template)
+│   │   ├── page.tsx        # / -> LandingTemplate
+│   │   ├── cart/page.tsx   # /cart -> CartTemplate
+│   │   ├── checkout/page.tsx # /checkout -> CheckoutTemplate
+│   │   ├── profile/page.tsx  # /profile -> ProfileTemplate
 │   │   ├── globals.css     # Theme tokens, ticket notches, & barcode CSS
-│   │   ├── layout.tsx      # Root layout, font Geist, Query & Toast providers
-│   │   └── page.tsx        # Screen 2: Landing page & Intake Hub
+│   │   └── layout.tsx      # Root layout, font Geist, Query & Toast providers
 │   ├── components/
-│   │   ├── branding/       # BrandLogo component ("FLYPICK +")
-│   │   ├── cart/           # CartItemCard (Boarding pass style), CartSummary
-│   │   ├── checkout/       # AddressStep, FreightStep, AddOnsStep, PaymentModal
-│   │   ├── intake/         # IntakeTabs, BuyForMeForm, ForwardingForm
-│   │   ├── layout/         # Navbar (live ticker), Footer
-│   │   ├── profile/        # VirtualWarehouseCard, TrackingStepper, QcUnboxingCard, LoginModal
-│   │   └── ui/             # Button (CVA), Badge, Barcode, TicketCard
-│   ├── config/
-│   │   └── branding.ts     # Konfigurasi kurs, alamat Shanghai, tarif kargo, & kontak
-│   ├── hooks/
-│   │   ├── use-auth-mutations.ts  # TanStack Query mutasi OTP WhatsApp
-│   │   └── use-scrape-product.ts   # Simulasi ekstraksi metadata Taobao/1688
-│   ├── lib/
-│   │   ├── formatters.ts   # Pemformat mata uang (IDR, CNY) & generator ID
-│   │   ├── query-client.ts # TanStack Query Client singleton
-│   │   └── utils.ts        # Helper cn (clsx + twMerge)
-│   ├── providers/
-│   │   ├── query-provider.tsx     # Client provider TanStack React Query
-│   │   └── toast-provider.tsx     # Notifikasi toast bergaya tiket koper
-│   ├── schemas/            # Skema Zod (auth, buy-for-me, forwarding, checkout)
-│   ├── store/              # Zustand stores (useAuthStore, useCartStore, useCheckoutStore)
-│   └── types/              # Definisi interface TypeScript global
+│   │   ├── atoms/          # Atomic Design: Button, Badge, Barcode, BrandLogo, Input, RubberStamp, TicketDivider
+│   │   ├── molecules/      # Atomic Design: CurrencyCalcBox, AddressCopyRow, QtyControl, EmptyState
+│   │   ├── organisms/      # Atomic Design: HeroFlightBanner, IntakeTabs, CartItemCard, CartSummary,
+│   │   │                   #                AddressStep, FreightStep, AddOnsStep, InvoiceSummary, PaymentModal,
+│   │   │                   #                VirtualWarehouseCard, TrackingStepper, QcUnboxingCard, OrderTimeline, Navbar, Footer
+│   │   └── templates/      # Atomic Design: LandingTemplate, CartTemplate, CheckoutTemplate, ProfileTemplate
+│   ├── hooks/              # Decoupled Business Logic Hooks:
+│   │   ├── use-buy-for-me-form.ts   # Scraper logic, Taobao link handling, & validation
+│   │   ├── use-forwarding-form.ts   # China tracking manifests, courier presets, & declared value
+│   │   ├── use-cart-actions.ts      # Cart store selectors, quantity operations, & subtotal IDR/CNY
+│   │   ├── use-checkout-flow.ts     # Multi-step state, add-ons toggles, fees, & payment triggers
+│   │   ├── use-warehouse-pass.ts    # Shanghai warehouse address clipboard & toast copy actions
+│   │   ├── use-order-tracking.ts    # Order history, timeline expansion, & login modal toggles
+│   │   ├── use-scrape-product.ts    # Simulated marketplace metadata scraping
+│   │   └── use-auth-mutations.ts    # WhatsApp OTP request & verify mutations
+│   ├── config/             # Branding tokens, alamat gudang Shanghai, & tarif kargo
+│   ├── lib/                # Utility helpers (cn, formatters, query client)
+│   ├── providers/          # QueryProvider & ToastProvider
+│   ├── schemas/            # Strict Zod schemas (auth, buy-for-me, forwarding, checkout)
+│   ├── store/              # Zustand persistent stores (useAuthStore, useCartStore, useCheckoutStore)
+│   └── types/              # Inferred domain TypeScript interfaces
 ├── biome.json              # Konfigurasi Biome linter & formatter
 ├── next.config.ts          # Konfigurasi Next.js
 ├── package.json            # Daftar dependensi & npm scripts

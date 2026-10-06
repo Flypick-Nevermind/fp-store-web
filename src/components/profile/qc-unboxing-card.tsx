@@ -1,3 +1,5 @@
+"use client";
+
 import { Box, Camera, CheckCircle2, Scale, UserCheck } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
