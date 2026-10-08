@@ -208,6 +208,8 @@ export const useCheckoutStore = create<CheckoutState>()(
           minute: "2-digit",
         });
 
+        const isHandcarry = state.shippingMethod === "HANDCARRY";
+
         const timeline: TimelineEvent[] = [
           {
             stage: "ORDER_PLACED",
@@ -229,37 +231,51 @@ export const useCheckoutStore = create<CheckoutState>()(
           },
           {
             stage: "ARRIVED_CHINA_HUB",
-            title: "Arrived at China Hub (Tiba di Gudang Shanghai)",
-            description:
-              "Barang tiba di Shanghai Hub (PVG-01). Inspeksi unboxing Photo QC & penimbangan aktual.",
+            title: isHandcarry
+              ? "Traveler Handover (Serah Terima ke Traveler VIP)"
+              : "Arrived at China Hub (Tiba di Gudang Shanghai)",
+            description: isHandcarry
+              ? "Barang tiba di Shanghai Hub, dicek fisik & dimasukkan ke bagasi kabin traveler terverifikasi."
+              : "Barang tiba di Shanghai Hub (PVG-01). Inspeksi unboxing Photo QC & penimbangan aktual.",
             timestamp: "Menunggu Kedatangan",
             location: "Shanghai Pudong Hub (PVG-01)",
             isCompleted: false,
           },
           {
             stage: "IN_TRANSIT_PVG_CGK",
-            title: "In Transit PVG ➔ CGK (Penerbangan Kargo Udara)",
-            description:
-              state.shippingMethod === "AIR_EXPRESS"
+            title: isHandcarry
+              ? "In Transit (Penerbangan Kabin Traveler PVG ➔ CGK)"
+              : "In Transit PVG ➔ CGK (Penerbangan Kargo Udara)",
+            description: isHandcarry
+              ? "Paket dibawa langsung oleh traveler di bagasi kabin penumpang pesawat (Estimasi 3-5 hari)."
+              : state.shippingMethod === "AIR_EXPRESS" ||
+                  state.shippingMethod === "CARGO"
                 ? "Penerbangan kargo internasional rute Shanghai (PVG) ke Jakarta (CGK)."
                 : "Pelayaran kapal kontainer rute Pelabuhan Shanghai ke Tanjung Priok.",
             timestamp: "Menunggu Jadwal Terbang",
-            location: "Air / Maritime Freight Route",
+            location: isHandcarry
+              ? "Passenger Cabin Flight"
+              : "Air / Maritime Freight Route",
             isCompleted: false,
           },
           {
             stage: "CUSTOMS_CLEARANCE",
-            title: "Customs Clearance (Proses Bea Cukai Indonesia)",
-            description:
-              "Proses clearance impor resmi, pembayaran PPN/PPH, dan rilis SPPB kargo.",
+            title: isHandcarry
+              ? "Passenger Customs (Pemeriksaan Jalur Penumpang)"
+              : "Customs Clearance (Proses Bea Cukai Indonesia)",
+            description: isHandcarry
+              ? "Pemeriksaan jalur kedatangan penumpang di bandara internasional Soekarno-Hatta (CGK)."
+              : "Proses clearance impor resmi, pembayaran PPN/PPH, dan rilis SPPB kargo.",
             timestamp: "Menunggu Kedatangan CGK",
-            location: "Jakarta Gateway (CGK-01)",
+            location: isHandcarry
+              ? "Arrival Terminal Passenger Lane"
+              : "Jakarta Gateway (CGK-01)",
             isCompleted: false,
           },
           {
             stage: "DISPATCHED",
             title: "Dispatched (Pengiriman Domestik)",
-            description: `Kargo dioper ke ekspedisi lokal untuk penjemputan rute ${state.deliveryAddress.city}.`,
+            description: `Paket dioper ke ekspedisi lokal untuk penjemputan rute ${state.deliveryAddress.city}.`,
             timestamp: "Menunggu Rilis Kargo",
             location: "Jakarta Hub",
             isCompleted: false,
@@ -274,7 +290,6 @@ export const useCheckoutStore = create<CheckoutState>()(
           },
         ];
 
-        const isHandcarry = state.shippingMethod === "HANDCARRY";
         const stage2Estimated = isHandcarry
           ? 0
           : Math.round(BRANDING.shippingRates.cargo.ratePerKg * 1.5);

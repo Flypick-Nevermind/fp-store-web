@@ -80,9 +80,35 @@ const STAGE_ORDER: Record<OrderOperationalStage, number> = {
 
 export function TrackingStepper({ order }: TrackingStepperProps) {
   const currentStageRank = STAGE_ORDER[order.currentStage] || 4;
+  const isHandcarry = order.shippingMethod === "HANDCARRY";
 
   // Show QC unboxing photo card when order has reached or passed China Hub (rank >= 3)
   const hasArrivedAtChinaHub = currentStageRank >= 3;
+
+  const stages: StageStepConfig[] = OPERATIONAL_STAGES.map((step) => {
+    if (isHandcarry) {
+      if (step.stage === "ARRIVED_CHINA_HUB") {
+        return {
+          ...step,
+          label: "Traveler Handover",
+          subLabel: "Shanghai Hub",
+        };
+      }
+      if (step.stage === "IN_TRANSIT_PVG_CGK") {
+        return {
+          ...step,
+          subLabel: "Kabin Traveler",
+        };
+      }
+      if (step.stage === "CUSTOMS_CLEARANCE") {
+        return {
+          ...step,
+          subLabel: "Bagasi Penumpang",
+        };
+      }
+    }
+    return step;
+  });
 
   return (
     <div className="space-y-6">
@@ -90,7 +116,9 @@ export function TrackingStepper({ order }: TrackingStepperProps) {
       <div className="bg-white border-2 border-[#1A1A24] p-4 sm:p-5 shadow-[3px_3px_0px_0px_#1A1A24]">
         <div className="flex items-center justify-between pb-3 border-b border-[#1A1A24]/10 mb-4">
           <span className="font-mono text-xs font-bold uppercase text-[#2323FF]">
-            7-STAGE CROSS-BORDER CARGO PROGRESS
+            {isHandcarry
+              ? "7-STAGE VIP HANDCARRY PROGRESS"
+              : "7-STAGE CROSS-BORDER CARGO PROGRESS"}
           </span>
           <Badge variant="electric">
             STATUS: {order.currentStage.replace(/_/g, " ")}
@@ -99,7 +127,7 @@ export function TrackingStepper({ order }: TrackingStepperProps) {
 
         {/* Stepper Grid (Horizontal on desktop, scrollable/wrapped) */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-          {OPERATIONAL_STAGES.map((stepConfig, index) => {
+          {stages.map((stepConfig, index) => {
             const stepRank = STAGE_ORDER[stepConfig.stage];
             const isCompleted = stepRank < currentStageRank;
             const isCurrent = stepRank === currentStageRank;

@@ -24,9 +24,7 @@ interface OrderTimelineProps {
 }
 
 export function OrderTimeline({ orders }: OrderTimelineProps) {
-  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(
-    orders[0]?.id || null,
-  );
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
   const {
     activeOrder,
@@ -59,6 +57,7 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
     <div className="space-y-8">
       {orders.map((order) => {
         const isExpanded = expandedOrderId === order.id;
+        const isHandcarry = order.shippingMethod === "HANDCARRY";
 
         return (
           <div
@@ -68,15 +67,23 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
             {/* Boarding Header Banner */}
             <div className="bg-[#1A1A24] text-white p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-[#2323FF]">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-[#2323FF] border border-[#00F0FF] flex items-center justify-center font-mono font-black text-xs text-[#FFF8E1]">
-                  CARGO
+                <div
+                  className={`w-9 h-9 border flex items-center justify-center font-mono font-black text-xs ${
+                    isHandcarry
+                      ? "bg-[#00F0FF] border-white text-[#1A1A24] shadow-[1px_1px_0px_0px_#2323FF]"
+                      : "bg-[#2323FF] border-[#00F0FF] text-[#FFF8E1]"
+                  }`}
+                >
+                  {isHandcarry ? "VIP" : "CARGO"}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xs font-bold text-[#00F0FF]">
                       NO RESI: {order.trackingCode}
                     </span>
-                    <Badge variant="yellow">{order.serviceType}</Badge>
+                    <Badge variant={isHandcarry ? "electric" : "yellow"}>
+                      {isHandcarry ? "VIP HANDCARRY" : order.serviceType}
+                    </Badge>
                   </div>
                   <p className="font-mono text-[11px] text-white/70">
                     ID Tiket: {order.id} | Dibuat:{" "}
@@ -91,20 +98,6 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
                   <span className="w-2 h-2 rounded-full bg-[#00F0FF] animate-ping" />
                   {order.currentStage.replace(/_/g, " ")}
                 </span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setExpandedOrderId(isExpanded ? null : order.id)
-                  }
-                  className="text-white hover:text-[#00F0FF] p-1 border border-white/20 hover:border-[#00F0FF] transition-all cursor-pointer"
-                  aria-label="Lihat detail pesanan"
-                >
-                  {isExpanded ? (
-                    <ChevronUp className="w-4 h-4" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" />
-                  )}
-                </button>
               </div>
             </div>
 
@@ -116,9 +109,12 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
                 <span className="font-bold text-[#2323FF]">JAKARTA (CGK)</span>
                 <span className="text-[#1A1A24]/60">
                   via{" "}
-                  {order.shippingMethod === "AIR_EXPRESS"
-                    ? "AIR FREIGHT (7-10H)"
-                    : "SEA FREIGHT (20-28H)"}
+                  {isHandcarry
+                    ? "VIP CABIN TRAVELER (3-5H)"
+                    : order.shippingMethod === "AIR_EXPRESS" ||
+                        order.shippingMethod === "CARGO"
+                      ? "AIR FREIGHT (7-10H)"
+                      : "SEA FREIGHT (20-28H)"}
                 </span>
               </div>
               <div className="flex items-center gap-3">
@@ -128,12 +124,18 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
                     {formatIdr(order.stage1Amount)}
                   </strong>
                 </span>
-                <span className="text-[#1A1A24]/70">
-                  Est. Tahap 2:{" "}
-                  <strong className="text-[#2323FF]">
-                    {formatIdr(order.stage2EstimatedAmount)}
-                  </strong>
-                </span>
+                {isHandcarry ? (
+                  <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 font-bold border border-emerald-300">
+                    BEBAS ONGKIR TAHAP 2 (LUNAS ALL-IN)
+                  </span>
+                ) : (
+                  <span className="text-[#1A1A24]/70">
+                    Est. Tahap 2:{" "}
+                    <strong className="text-[#2323FF]">
+                      {formatIdr(order.stage2EstimatedAmount)}
+                    </strong>
+                  </span>
+                )}
               </div>
             </div>
 
@@ -148,72 +150,98 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
               />
             </div>
 
-            {/* Detailed Timeline Events View */}
-            <div className="p-5 sm:p-6 space-y-6">
-              <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-[#1A1A24] flex items-center gap-2">
+            {/* Collapse Bar for Log Details */}
+            <button
+              type="button"
+              onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
+              className="w-full py-3 px-4 bg-[#FFF8E1] hover:bg-[#FDF3D0] border-b-2 border-dashed border-[#1A1A24]/25 flex items-center justify-between text-xs font-mono font-bold text-[#2323FF] transition-colors cursor-pointer select-none"
+            >
+              <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-[#2323FF]" />
-                LOG DETAIL AKTIVITAS MANIFEST LOGISTIK
-              </h4>
-
-              {/* Vertical timeline steps */}
-              <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:left-[11px] sm:before:left-[15px] before:top-2 before:bottom-2 before:w-0.5 before:bg-[#1A1A24]/20">
-                {order.timeline.map((event, index) => {
-                  const isCurrent = event.isCurrent;
-                  const isDone = event.isCompleted;
-
-                  return (
-                    <div
-                      key={event.title + event.timestamp}
-                      className="relative flex items-start gap-4"
-                    >
-                      {/* Node Bullet */}
-                      <div
-                        className={`absolute -left-6 sm:-left-8 top-0.5 w-6 h-6 rounded-none border-2 flex items-center justify-center font-mono text-[10px] font-bold ${
-                          isDone
-                            ? "bg-[#2323FF] text-white border-[#1A1A24]"
-                            : isCurrent
-                              ? "bg-[#00F0FF] text-[#1A1A24] border-[#1A1A24] ring-4 ring-[#00F0FF]/30"
-                              : "bg-white text-[#1A1A24]/40 border-[#1A1A24]/40"
-                        }`}
-                      >
-                        {isDone ? (
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                        ) : (
-                          index + 1
-                        )}
-                      </div>
-
-                      {/* Content */}
-                      <div
-                        className={`flex-1 p-3 border-2 transition-all ${
-                          isCurrent
-                            ? "bg-[#FFF8E1] border-[#2323FF] shadow-[2px_2px_0px_0px_#2323FF]"
-                            : "bg-white border-[#1A1A24]/20"
-                        }`}
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
-                          <p className="font-mono text-xs font-bold uppercase text-[#1A1A24]">
-                            {event.title}
-                          </p>
-                          <span className="font-mono text-[10px] text-[#1A1A24]/60">
-                            {event.timestamp}
-                          </span>
-                        </div>
-                        <p className="text-xs text-[#1A1A24]/80 font-sans">
-                          {event.description}
-                        </p>
-                        <div className="mt-2 flex items-center gap-1.5 font-mono text-[10px] text-[#2323FF]">
-                          <MapPin className="w-3 h-3" />
-                          <span>Lokasi: {event.location}</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                <span>
+                  {isExpanded
+                    ? "TUTUP LOG DETAIL AKTIVITAS MANIFEST"
+                    : `BUKA LOG DETAIL AKTIVITAS MANIFEST (${order.timeline.length} LOG TERCATAT)`}
+                </span>
               </div>
+              <div className="flex items-center gap-1.5 text-[11px] text-[#1A1A24]/70">
+                <span className="font-sans font-semibold">
+                  {isExpanded ? "Tutup Detail" : "Lihat Log & Rincian Paket"}
+                </span>
+                {isExpanded ? (
+                  <ChevronUp className="w-4 h-4 text-[#2323FF]" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-[#2323FF]" />
+                )}
+              </div>
+            </button>
 
-              {/* Collapsible Details: Items list & Destination */}
-              {isExpanded && (
+            {/* Detailed Timeline Events & Manifest View (Only shown when expanded) */}
+            {isExpanded && (
+              <div className="p-5 sm:p-6 space-y-6 animate-in slide-in-from-top-2 duration-200">
+                <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-[#1A1A24] flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-[#2323FF]" />
+                  LOG DETAIL AKTIVITAS MANIFEST LOGISTIK
+                </h4>
+
+                {/* Vertical timeline steps */}
+                <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:left-[11px] sm:before:left-[15px] before:top-2 before:bottom-2 before:w-0.5 before:bg-[#1A1A24]/20">
+                  {order.timeline.map((event, index) => {
+                    const isCurrent = event.isCurrent;
+                    const isDone = event.isCompleted;
+
+                    return (
+                      <div
+                        key={event.title + event.timestamp}
+                        className="relative flex items-start gap-4"
+                      >
+                        {/* Node Bullet */}
+                        <div
+                          className={`absolute -left-6 sm:-left-8 top-0.5 w-6 h-6 rounded-none border-2 flex items-center justify-center font-mono text-[10px] font-bold ${
+                            isDone
+                              ? "bg-[#2323FF] text-white border-[#1A1A24]"
+                              : isCurrent
+                                ? "bg-[#00F0FF] text-[#1A1A24] border-[#1A1A24] ring-4 ring-[#00F0FF]/30"
+                                : "bg-white text-[#1A1A24]/40 border-[#1A1A24]/40"
+                          }`}
+                        >
+                          {isDone ? (
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                          ) : (
+                            index + 1
+                          )}
+                        </div>
+
+                        {/* Content */}
+                        <div
+                          className={`flex-1 p-3 border-2 transition-all ${
+                            isCurrent
+                              ? "bg-[#FFF8E1] border-[#2323FF] shadow-[2px_2px_0px_0px_#2323FF]"
+                              : "bg-white border-[#1A1A24]/20"
+                          }`}
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
+                            <p className="font-mono text-xs font-bold uppercase text-[#1A1A24]">
+                              {event.title}
+                            </p>
+                            <span className="font-mono text-[10px] text-[#1A1A24]/60">
+                              {event.timestamp}
+                            </span>
+                          </div>
+                          <p className="text-xs text-[#1A1A24]/80 font-sans">
+                            {event.description}
+                          </p>
+                          <div className="mt-2 flex items-center gap-1.5 font-mono text-[10px] text-[#2323FF]">
+                            <MapPin className="w-3 h-3" />
+                            <span>Lokasi: {event.location}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Package details & Destination */}
                 <div className="pt-4 border-t-2 border-dashed border-[#1A1A24]/20 space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Item list */}
@@ -270,8 +298,8 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Barcode Footer */}
             <div className="bg-white px-5 py-3 border-t border-[#1A1A24]/20 flex items-center justify-between">

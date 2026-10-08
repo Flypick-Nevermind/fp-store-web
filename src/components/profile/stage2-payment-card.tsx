@@ -21,12 +21,43 @@ export function Stage2PaymentCard({
   order,
   onOpenPaymentModal,
 }: Stage2PaymentCardProps) {
+  const isHandcarry = order.shippingMethod === "HANDCARRY";
   const isPending = order.stage2PaymentStatus === "PENDING";
   const actualWeight = order.qcData?.weightKg || 1.15;
   const freightRatePerKg =
     order.shippingMethod === "AIR_EXPRESS" ? 165000 : 45000;
   const totalAmount =
     order.stage2ActualAmount || Math.round(actualWeight * freightRatePerKg);
+
+  if (isHandcarry) {
+    return (
+      <div className="bg-[#E6FFFA] border-2 border-[#1A1A24] p-4 sm:p-5 shadow-[4px_4px_0px_0px_#00F0FF] relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs font-black uppercase text-[#047857]">
+                STATUS BIAYA: VIP HANDCARRY (LUNAS ALL-IN)
+              </span>
+              <Badge variant="electric">BEBAS BIAYA TAHAP 2</Badge>
+            </div>
+            <p className="text-xs text-[#1A1A24]/80">
+              Paket ini menggunakan layanan{" "}
+              <strong>VIP Handcarry (Dibawa Traveler Kabin)</strong>. Seluruh
+              biaya jasa, penerbangan bagasi kabin, dan penanganan cukai telah
+              dilunasi di awal saat checkout. Anda{" "}
+              <strong>tidak dikenakan tagihan Tahap 2</strong> lagi.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="rubber-stamp text-emerald-600 border-emerald-600 text-xs bg-white">
+              ALL-IN PAID
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!isPending) {
     // Already Paid State
