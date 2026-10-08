@@ -28,6 +28,10 @@ export const metadata: Metadata = {
     "cargo china indonesia",
     "flypick",
   ],
+  icons: {
+    icon: "/assets/flypick-logo.png",
+    apple: "/assets/flypick-logo.png",
+  },
 };
 
 export default function RootLayout({

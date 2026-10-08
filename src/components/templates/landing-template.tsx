@@ -15,7 +15,11 @@ export function LandingTemplate() {
       <div className="relative z-10 w-full max-w-4xl mx-auto flex-1 flex flex-col justify-center items-center text-center my-auto space-y-6 sm:space-y-8">
         {/* Center Stylized F Logo Icon */}
         <div className="flex justify-center transition-transform hover:scale-105 duration-300">
-          <FlypickLogoIcon size={56} className="w-12 h-12 sm:w-14 sm:h-14" />
+          <FlypickLogoIcon
+            size={68}
+            priority
+            className="w-14 h-14 sm:w-18 sm:h-18"
+          />
         </div>
 
         {/* Main Headline & Tagline */}

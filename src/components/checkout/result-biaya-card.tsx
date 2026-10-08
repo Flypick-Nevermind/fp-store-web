@@ -12,13 +12,13 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/atoms";
 import { BRANDING } from "@/config/branding";
-import { cn, formatCny, formatIdr } from "@/lib/utils";
+import { cn, formatIdr } from "@/lib/utils";
 import type { CartItem, ShippingMethod } from "@/types";
 
 interface ResultBiayaCardProps {
   items: CartItem[];
   totalItemCount: number;
-  shippingMethod: ShippingMethod;
+  shippingMethod?: ShippingMethod;
   subtotalIdr: number;
   serviceFeeIdr: number;
   photoQcFee: number;
@@ -35,7 +35,6 @@ interface ResultBiayaCardProps {
 export function ResultBiayaCard({
   items,
   totalItemCount,
-  shippingMethod,
   subtotalIdr,
   serviceFeeIdr,
   photoQcFee,
@@ -83,7 +82,9 @@ export function ResultBiayaCard({
           <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
             {items.map((item) => {
               const isBfm = item.serviceType === "BUY_FOR_ME";
-              const bfm = isBfm ? (item as import("@/types").BuyForMeItem) : null;
+              const bfm = isBfm
+                ? (item as import("@/types").BuyForMeItem)
+                : null;
               const title = isBfm
                 ? bfm?.productName
                 : (item as import("@/types").ForwardingItem).description;
@@ -91,7 +92,9 @@ export function ResultBiayaCard({
               const variantDesc = isBfm
                 ? bfm?.selectedVariant?.color || "Default"
                 : "Forwarding Resi";
-              const linePrice = isBfm ? (bfm?.priceIdr || 0) * item.quantity : 0;
+              const linePrice = isBfm
+                ? (bfm?.priceIdr || 0) * item.quantity
+                : 0;
 
               return (
                 <div
