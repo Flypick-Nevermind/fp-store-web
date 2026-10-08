@@ -35,28 +35,44 @@ Platform ini menerapkan model **dua layanan utama (Dual-Service)**:
 
 ---
 
-## 🎨 Desain Sistem & Travel-Paper Aesthetic
+## 🎨 Desain Sistem & Redesign Single-Screen Hero
 
-FLYPICK dirancang dengan identitas visual bertema **Travel Paper / Flight Boarding Pass & Airport Cargo**:
+FLYPICK telah didesain ulang dengan identitas visual modern, bersih, dan berkelas sesuai referensi visual:
 
-- **Color Palette & Design Tokens:**
-  - `Cream` (`#FFF8E1`): Latar belakang canvas kertas tiket vintage.
-  - `Neon Blue` (`#2323FF`): Garis pembatas boarding pass, badge status kargo, dan heading utama.
-  - `Electric Blue` (`#00F0FF`): Aksen glow, tombol aksi interaktif, dan status pelacakan aktif.
-  - `Dark Charcoal` (`#1A1A24`): Tipografi tajam berkontras tinggi dan aksen stempel stensil.
-  - `Surface` (`#FFFFFF`): Badan kartu dan input formulir.
-- **Visual Elements:**
-  - Potongan lekuk tiket semi-lingkaran (*cutout notches*).
-  - Garis sobek perforasi putus-putus (*dashed tear-off lines*).
-  - Barcode realistis monospaced untuk tanda pengenal kargo (*airport barcodes*).
-  - Rubber stamp stensil status kargo (*"100% BEBAS REDLINE"*, *"PHOTO QC SHANGHAI"*, *"LUNAS - CARGO RELEASED"*).
-  - Kartu label koper (*Luggage tag with eyelet punch ring*).
+- **Single-Screen Hero (Tanpa Scroll Panjang):**
+  - Tampilan beranda dirancang kompak, rapi, dan memikat tanpa scroll panjang ke bawah.
+  - Logo gradasi `F` di tengah, headline *"FROM CHINA TO YOUR DOORSTEP"*, dan visual penerbangan (Boarding pass tiket di kiri, lintasan terbang melingkar, dan pesawat jet di kanan).
+  - Floating pill bar untuk input link Taobao, Pinduoduo, Alibaba, dan 1688 dengan dropdown pemilih platform.
+  - 3 Trust Badges: **Aman** (*Dari China ke Indonesia*), **Mudah** (*Cukup 1 link*), dan **Cepat** (*Proses transparan*).
+- **Color Palette & Visual Tokens:**
+  - `Warm Ivory` (`#FAF8F5`): Latar belakang canvas bersih dan lembut.
+  - `Royal Aviation Blue` (`#1035D0`): Warna primer maskapai, button hover, dan garis tiket.
+  - `Electric Cyan` (`#00F0FF` / `#00D2FF`): Aksen gradasi dan highlight status.
+  - `Dark Charcoal` (`#0F172A`): Tipografi tajam berkontras tinggi.
+- **Konsep Alur Kerja (End-to-End User Flow):**
+  1. **Halaman Depan (`/`)**: Pengguna menempelkan link produk (Taobao/1688/Pinduoduo/Alibaba) ➔ langsung masuk ke halaman keranjang.
+  2. **Halaman Keranjang (`/cart`)**: 1 link = 1 varian produk, dilengkapi stepper kuantitas per link `[-] [qty] [+]`, opsi `+ Tambah Link Lagi ke Depan`, dan tombol lanjut checkout.
+  3. **Halaman Checkout (`/checkout`) - Split View Layout:**
+     - **Split Kiri:** Menampilkan **2 Tiket Pengiriman** (Tiket Jasa Cargo vs Tiket Jasa Handcarry VIP), formulir alamat pengantaran, dan opsi proteksi tambahan.
+     - **Split Kanan:** Menampilkan **Result Biaya** secara dinamis (live calculation subtotal, ongkir terpilih, fee handling, dan grand total).
+  4. **Menu Pembayaran (`Payment Modal`)**: Gateway simulasi instan dengan QRIS & Virtual Account BCA, countdown timer, dan konfirmasi penerbitan tiket pesanan.
 
 ---
 
-## 💡 Alur Bisnis & Pembayaran 2-Tahap (Two-Stage Model)
+## 💡 Pilihan 2 Tiket Jasa Pengiriman
 
-FLYPICK menerapkan model penagihan 2 tahap yang adil dan transparan: ongkir kargo internasional **tidak ditebak di awal**, melainkan dihitung berdasarkan **timbangan digital fisik riil** di gudang Shanghai FTZ setelah barang lolos inspeksi QC.
+Pada tahap Checkout, pengguna dapat memilih antara 2 jenis tiket penerbangan resmi:
+
+1. **Tiket Jasa Cargo (Air & Sea Cargo Hub):**
+   - **Tarif:** Rp 165.000 / kg.
+   - **Estimasi:** 7 - 10 Hari Kerja.
+   - **Sistem:** Model 2 Tahap. Pembayaran Tahap 1 untuk talangan produk & fee, sedangkan ongkir kargo ditimbang transparan di Shanghai Hub (Tahap 2).
+   - **Cocok Untuk:** Belanja partai banyak atau barang volume besar.
+2. **Tiket Jasa Handcarry (VIP Traveler Luggage):**
+   - **Tarif:** Rp 95.000 / pcs (All-in).
+   - **Estimasi:** 3 - 5 Hari Kerja (Super Cepat).
+   - **Sistem:** 1 Tahap Langsung Lunas. Dibawa langsung dalam bagasi kabin penumpang oleh traveler/kurir resmi FLYPICK. Bebas antre pelabuhan kargo.
+   - **Cocok Untuk:** Barang fashion, kosmetik, atau kebutuhan mendesak yang butuh cepat sampai.
 
 ### Diagram Alur Operasional E2E
 

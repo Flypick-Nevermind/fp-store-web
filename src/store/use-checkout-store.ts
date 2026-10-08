@@ -171,7 +171,7 @@ export const useCheckoutStore = create<CheckoutState>()(
   persist(
     (set, get) => ({
       activeStep: "CHECKOUT",
-      shippingMethod: "AIR_EXPRESS",
+      shippingMethod: "CARGO",
       addOns: DEFAULT_ADDONS,
       paymentStatus: "IDLE",
       deliveryAddress: DEFAULT_ADDRESS,
@@ -274,12 +274,10 @@ export const useCheckoutStore = create<CheckoutState>()(
           },
         ];
 
-        const rate =
-          state.shippingMethod === "AIR_EXPRESS"
-            ? BRANDING.shippingRates.airExpress.ratePerKg
-            : BRANDING.shippingRates.seaEconomy.ratePerKg;
-
-        const stage2Estimated = Math.round(rate * 1.5);
+        const isHandcarry = state.shippingMethod === "HANDCARRY";
+        const stage2Estimated = isHandcarry
+          ? 0
+          : Math.round(BRANDING.shippingRates.cargo.ratePerKg * 1.5);
 
         const newOrder: OrderRecord = {
           id: orderId,
@@ -294,7 +292,7 @@ export const useCheckoutStore = create<CheckoutState>()(
           stage1PaymentStatus: "PAID",
           stage2EstimatedAmount: stage2Estimated,
           stage2ActualAmount: stage2Estimated,
-          stage2PaymentStatus: "PENDING",
+          stage2PaymentStatus: isHandcarry ? "PAID" : "PENDING",
           currentStage: "ORDER_PLACED",
           timeline,
           qcData: state.addOns.photoQc ? MOCK_QC_DATA : undefined,

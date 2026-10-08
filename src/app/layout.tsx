@@ -40,7 +40,7 @@ export default function RootLayout({
       lang="id"
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
-      <body className="min-h-screen flex flex-col bg-[#FFF8E1] text-[#1A1A24]">
+      <body className="min-h-screen flex flex-col bg-[#FAF8F5] text-[#0F172A] antialiased">
         <QueryProvider>
           <ToastProvider>
             <Navbar />

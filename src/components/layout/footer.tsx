@@ -1,11 +1,21 @@
+"use client";
+
 import { CheckCircle, Clock, Plane, ShieldCheck } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { BrandLogo } from "@/components/branding/brand-logo";
 import { Barcode } from "@/components/ui/barcode";
 import { BRANDING } from "@/config/branding";
 
 export function Footer() {
+  const pathname = usePathname();
+
+  // On the home landing page, suppress the large footer to match the clean single-screen screenshot aesthetic
+  if (pathname === "/") {
+    return null;
+  }
+
   return (
-    <footer className="mt-20 bg-[#1A1A24] text-white border-t-4 border-[#2323FF]">
+    <footer className="mt-20 bg-[#1A1A24] text-white border-t-4 border-[#1035D0]">
       {/* Top Banner Guarantees */}
       <div className="border-b border-white/10 bg-[#14141d] py-6 px-4">
         <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 font-mono text-xs">

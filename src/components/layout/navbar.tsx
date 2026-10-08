@@ -1,18 +1,24 @@
 "use client";
 
-import { Compass, PlaneTakeoff, ShoppingBag } from "lucide-react";
+import { Search, ShoppingBag, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BrandLogo } from "@/components/branding/brand-logo";
-import { BRANDING } from "@/config/branding";
+import { LoginModal } from "@/components/profile/login-modal";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/providers/toast-provider";
 import { useAuthStore } from "@/store/use-auth-store";
 import { useCartStore } from "@/store/use-cart-store";
 
 export function Navbar() {
   const pathname = usePathname();
+  const { info } = useToast();
+
   const [isMounted, setIsMounted] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     setIsMounted(true);
@@ -20,124 +26,140 @@ export function Navbar() {
 
   const rawItemCount = useCartStore((s) => s.getItemCount());
   const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const itemCount = isMounted ? rawItemCount : 0;
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      info(
+        "Pencarian Produk",
+        `Mencari "${searchQuery}". Anda juga dapat langsung menempelkan link produk China di halaman utama.`,
+      );
+      setIsSearchOpen(false);
+    }
+  };
+
   return (
-    <header className="sticky top-0 z-40 w-full bg-[#FFF8E1] border-b-2 border-[#1A1A24] shadow-[0_2px_0_0_#2323FF]">
-      {/* Top Ticker: Live Cargo Exchange Rate & Shanghai PVG Status */}
-      <div className="bg-[#1A1A24] text-white py-1 px-4 text-[11px] font-mono flex items-center justify-between overflow-x-auto border-b border-[#2323FF]">
-        <div className="flex items-center gap-4 shrink-0">
-          <span className="inline-flex items-center gap-1.5 text-[#00F0FF]">
-            <span className="w-2 h-2 rounded-full bg-[#00F0FF] animate-pulse" />
-            SHANGHAI HUB [PVG-01]: AKTIF & TERIMA PAKET
-          </span>
-          <span className="hidden sm:inline text-white/50">|</span>
-          <span className="hidden sm:inline text-white/80">
-            KURS KONSOLIDASI:{" "}
-            <strong className="text-[#FFDE00]">
-              {BRANDING.exchangeRate.label}
-            </strong>
-          </span>
+    <>
+      <header className="sticky top-0 z-40 w-full bg-[#FAF8F5]/90 backdrop-blur-md border-b border-[#E8E2D9] transition-all">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+          {/* ── Left: Brand Logo ─────────────────────────────────── */}
+          <Link href="/" className="shrink-0 flex items-center gap-2">
+            <BrandLogo iconSize={36} />
+          </Link>
+
+          {/* ── Center: Minimal Navigation ───────────────────────── */}
+          <nav className="hidden md:flex items-center gap-8 font-sans text-sm font-semibold text-[#1E293B]">
+            <button
+              type="button"
+              onClick={() =>
+                info(
+                  "Tentang FLYPICK",
+                  "FLYPICK adalah platform jasa titip & logistik kargo terpercaya rute China ke Indonesia dengan transparansi biaya tanpa perantara.",
+                )
+              }
+              className="hover:text-[#1035D0] transition-colors cursor-pointer"
+            >
+              About
+            </button>
+
+            <Link
+              href="/profile"
+              className={cn(
+                "hover:text-[#1035D0] transition-colors cursor-pointer",
+                pathname === "/profile" ? "text-[#1035D0] font-bold" : "",
+              )}
+            >
+              Track Order
+            </Link>
+
+            <button
+              type="button"
+              onClick={() =>
+                info(
+                  "Promo Aktif",
+                  "🎉 Gratis biaya packing ekstra bubble wrap 3-lapis untuk pesanan pertama Anda!",
+                )
+              }
+              className="hover:text-[#1035D0] transition-colors cursor-pointer"
+            >
+              Promo
+            </button>
+          </nav>
+
+          {/* ── Right Actions: Search, Cart, Masuk / Daftar ──────── */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            {/* Search Icon */}
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen((prev) => !prev)}
+              className="p-2 text-[#334155] hover:text-[#1035D0] hover:bg-[#F1F5F9] rounded-full transition-colors cursor-pointer"
+              aria-label="Cari Produk"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+
+            {/* Shopping Cart Icon with Badge */}
+            <Link
+              href="/cart"
+              className="relative p-2 text-[#334155] hover:text-[#1035D0] hover:bg-[#F1F5F9] rounded-full transition-colors cursor-pointer"
+              aria-label="Keranjang Belanja"
+            >
+              <ShoppingBag className="w-5 h-5" />
+              {itemCount > 0 && (
+                <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 bg-[#1035D0] text-white font-mono font-bold text-[10px] flex items-center justify-center rounded-full shadow-xs animate-in zoom-in-75">
+                  {itemCount}
+                </span>
+              )}
+            </Link>
+
+            {/* Masuk / Daftar Rounded Pill Button */}
+            <button
+              type="button"
+              onClick={() => setIsLoginModalOpen(true)}
+              className="px-5 py-2 rounded-full border border-[#1035D0] text-[#1035D0] hover:bg-[#1035D0] hover:text-white font-sans text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer select-none"
+            >
+              {isMounted && isAuthenticated && user
+                ? user.warehouseCode
+                : "Masuk / Daftar"}
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-3 shrink-0 pl-4">
-          <span className="text-[#00F0FF] hidden md:inline">
-            FLIGHT CARGO PVG ➔ CGK: 7-10 HARI
-          </span>
-          <span className="bg-[#2323FF] text-[#FFF8E1] px-1.5 py-0.5 text-[9px] uppercase tracking-wider font-bold">
-            STAGE 1 & 2 TRANSPARAN
-          </span>
-        </div>
-      </div>
 
-      {/* Main Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        {/* Brand */}
-        <Link href="/" className="shrink-0 flex items-center gap-2">
-          <BrandLogo showSubtitle />
-        </Link>
-
-        {/* Navigation Tabs Styled as Boarding Gate Selectors */}
-        <nav className="hidden md:flex items-center gap-1 font-mono text-xs">
-          <Link
-            href="/"
-            className={cn(
-              "px-3 py-1.5 border-2 transition-all font-bold tracking-wider uppercase flex items-center gap-1.5",
-              pathname === "/"
-                ? "bg-[#2323FF] text-white border-[#1A1A24] shadow-[2px_2px_0px_0px_#1A1A24]"
-                : "bg-white text-[#1A1A24] border-transparent hover:border-[#1A1A24] hover:bg-[#FFF8E1]",
-            )}
-          >
-            <Compass className="w-3.5 h-3.5" />
-            INTAKE HUB
-          </Link>
-
-          <Link
-            href="/cart"
-            className={cn(
-              "px-3 py-1.5 border-2 transition-all font-bold tracking-wider uppercase flex items-center gap-1.5 relative",
-              pathname === "/cart"
-                ? "bg-[#2323FF] text-white border-[#1A1A24] shadow-[2px_2px_0px_0px_#1A1A24]"
-                : "bg-white text-[#1A1A24] border-transparent hover:border-[#1A1A24] hover:bg-[#FFF8E1]",
-            )}
-          >
-            <ShoppingBag className="w-3.5 h-3.5" />
-            KERANJANG KONSOLIDASI
-            {itemCount > 0 && (
-              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1 bg-[#00F0FF] text-[#1A1A24] font-bold text-[10px] border border-[#1A1A24]">
-                {itemCount}
-              </span>
-            )}
-          </Link>
-
-          <Link
-            href="/profile"
-            className={cn(
-              "px-3 py-1.5 border-2 transition-all font-bold tracking-wider uppercase flex items-center gap-1.5",
-              pathname === "/profile"
-                ? "bg-[#2323FF] text-white border-[#1A1A24] shadow-[2px_2px_0px_0px_#1A1A24]"
-                : "bg-white text-[#1A1A24] border-transparent hover:border-[#1A1A24] hover:bg-[#FFF8E1]",
-            )}
-          >
-            <PlaneTakeoff className="w-3.5 h-3.5" />
-            GUDANG & LACAK
-          </Link>
-        </nav>
-
-        {/* Right Action: User Luggage Pass & Cart Button */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          <Link
-            href="/profile"
-            className="flex items-center gap-2 bg-white border-2 border-[#1A1A24] px-2.5 py-1 shadow-[2px_2px_0px_0px_#1A1A24] hover:bg-[#FFF8E1] transition-all"
-          >
-            <div className="w-2 h-2 rounded-full bg-[#2323FF]" />
-            <div className="flex flex-col text-left">
-              <span className="font-mono text-[9px] uppercase tracking-wider text-[#1A1A24]/60">
-                LUGGAGE PASS
-              </span>
-              <span
-                suppressHydrationWarning
-                className="font-mono text-xs font-black text-[#2323FF]"
+        {/* ── Collapsible Search Bar Overlay ───────────────────── */}
+        {isSearchOpen && (
+          <div className="border-t border-[#E8E2D9] bg-white px-4 py-3 animate-in slide-in-from-top-2 duration-150">
+            <form
+              onSubmit={handleSearchSubmit}
+              className="max-w-2xl mx-auto flex items-center gap-2"
+            >
+              <Search className="w-4 h-4 text-[#94A3B8]" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari nama produk Taobao, 1688, atau kategori..."
+                className="flex-1 bg-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setIsSearchOpen(false)}
+                className="text-[#94A3B8] hover:text-[#0F172A] p-1 cursor-pointer"
               >
-                {isMounted && user ? user.warehouseCode : "MASUK"}
-              </span>
-            </div>
-          </Link>
+                <X className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
+        )}
+      </header>
 
-          <Link
-            href="/cart"
-            className="md:hidden relative p-2 bg-[#2323FF] text-white border-2 border-[#1A1A24] shadow-[2px_2px_0px_0px_#1A1A24]"
-            aria-label="Keranjang"
-          >
-            <ShoppingBag className="w-5 h-5 text-[#00F0FF]" />
-            {itemCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-[#FFDE00] text-[#1A1A24] font-mono font-bold text-[10px] flex items-center justify-center border border-[#1A1A24]">
-                {itemCount}
-              </span>
-            )}
-          </Link>
-        </div>
-      </div>
-    </header>
+      {/* WhatsApp OTP / Auth Login Modal */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+      />
+    </>
   );
 }

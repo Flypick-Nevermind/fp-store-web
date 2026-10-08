@@ -19,6 +19,25 @@ export const BRANDING = {
     updatedAt: "Live Interbank Rate",
   },
   shippingRates: {
+    cargo: {
+      name: "Tiket Jasa Cargo",
+      ratePerKg: 165000,
+      eta: "7-10 Hari Kerja",
+      minWeightKg: 0.5,
+      carrier: "FLYPICK Air & Sea Cargo Hub",
+      badge: "CARGO FREIGHT",
+      description:
+        "Jalur kargo resmi Shanghai (PVG) ke Jakarta (CGK). Biaya ongkir ditimbang transparan di gudang Shanghai saat tiba (Invoice Tahap 2).",
+    },
+    handcarry: {
+      name: "Tiket Jasa Handcarry",
+      ratePerItem: 95000,
+      eta: "3-5 Hari Kerja",
+      carrier: "FLYPICK VIP Traveler Luggage",
+      badge: "VIP HANDCARRY",
+      description:
+        "Dibawa langsung dalam bagasi kabin traveler VIP. Super cepat, bebas antre pelabuhan kargo, tarif all-in Rp 95.000/pcs langsung di Tahap 1.",
+    },
     airExpress: {
       ratePerKg: 165000,
       eta: "7-10 Hari Kerja",

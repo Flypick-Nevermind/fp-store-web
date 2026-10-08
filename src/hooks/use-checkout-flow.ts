@@ -19,6 +19,9 @@ export function useCheckoutFlow() {
 
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
+  // Total quantity across all links
+  const totalItemCount = items.reduce((acc, it) => acc + (it.quantity || 1), 0);
+
   // Subtotals & Fee calculations
   const subtotalIdr = getSubtotalIdr();
   const serviceFeeIdr = getServiceFeeIdr();
@@ -27,18 +30,27 @@ export function useCheckoutFlow() {
     ? BRANDING.serviceFees.extraBubbleWrapIdr
     : 0;
   const addOnsTotal = photoQcFee + bubbleWrapFee;
-  const grandTotalStage1 = subtotalIdr + serviceFeeIdr + addOnsTotal;
 
-  // Estimated Stage 2 freight
-  const freightRate =
-    shippingMethod === "AIR_EXPRESS"
-      ? BRANDING.shippingRates.airExpress.ratePerKg
-      : BRANDING.shippingRates.seaEconomy.ratePerKg;
-  const estimatedWeight = 1.5; // Est. 1.5kg
-  const estimatedStage2 = Math.round(freightRate * estimatedWeight);
+  // Shipping Fee calculation (Cargo vs Handcarry)
+  const isHandcarry = shippingMethod === "HANDCARRY";
+  const handcarryRatePerItem = BRANDING.shippingRates.handcarry.ratePerItem;
+  const handcarryShippingFee = totalItemCount * handcarryRatePerItem;
+
+  // Cargo estimated Stage 2 (estimated 1.5kg)
+  const cargoRatePerKg = BRANDING.shippingRates.cargo.ratePerKg;
+  const estimatedWeightKg = 1.5;
+  const cargoEstimatedStage2 = Math.round(cargoRatePerKg * estimatedWeightKg);
+
+  // For Handcarry: shipping fee is billed directly in Stage 1!
+  // For Cargo: shipping fee is billed in Stage 2 after weighing in Shanghai.
+  const stage1ShippingFee = isHandcarry ? handcarryShippingFee : 0;
+  const grandTotalStage1 =
+    subtotalIdr + serviceFeeIdr + addOnsTotal + stage1ShippingFee;
+  const estimatedStage2 = isHandcarry ? 0 : cargoEstimatedStage2;
 
   return {
     items,
+    totalItemCount,
     deliveryAddress,
     setDeliveryAddress,
     shippingMethod,
@@ -50,6 +62,10 @@ export function useCheckoutFlow() {
     photoQcFee,
     bubbleWrapFee,
     addOnsTotal,
+    isHandcarry,
+    handcarryShippingFee,
+    cargoEstimatedStage2,
+    stage1ShippingFee,
     grandTotalStage1,
     estimatedStage2,
     isPaymentModalOpen,

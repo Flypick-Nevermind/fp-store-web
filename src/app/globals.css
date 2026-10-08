@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --canvas-cream: #fff8e1;
-  --neon-blue: #2323ff;
-  --electric-blue: #00f0ff;
-  --dark-charcoal: #1a1a24;
+  --canvas-cream: #faf8f5;
+  --neon-blue: #1035d0;
+  --electric-blue: #00d2ff;
+  --dark-charcoal: #0f172a;
   --surface: #ffffff;
-  --surface-muted: #f9f7f1;
-  --tag-orange: #ff5e1e;
-  --tag-yellow: #ffde00;
+  --surface-muted: #f8fafc;
+  --tag-orange: #ff5000;
+  --tag-yellow: #f59e0b;
 
   --background: var(--canvas-cream);
   --foreground: var(--dark-charcoal);
@@ -16,14 +16,14 @@
 
 @theme inline {
   --color-canvas: var(--canvas-cream);
-  --color-cream: #fff8e1;
-  --color-neon-blue: #2323ff;
-  --color-electric-blue: #00f0ff;
-  --color-charcoal: #1a1a24;
+  --color-cream: #faf8f5;
+  --color-neon-blue: #1035d0;
+  --color-electric-blue: #00d2ff;
+  --color-charcoal: #0f172a;
   --color-surface: #ffffff;
-  --color-surface-muted: #f9f7f1;
-  --color-tag-orange: #ff5e1e;
-  --color-tag-yellow: #ffde00;
+  --color-surface-muted: #f8fafc;
+  --color-tag-orange: #ff5000;
+  --color-tag-yellow: #f59e0b;
 
   --font-mono:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
@@ -31,14 +31,11 @@
 }
 
 body {
-  background-color: #fff8e1;
-  color: #1a1a24;
+  background-color: #faf8f5;
+  color: #0f172a;
   font-family:
     system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
     Ubuntu, Cantarell, sans-serif;
-  background-image: radial-gradient(#1a1a24 0.65px, transparent 0.65px);
-  background-size: 24px 24px;
-  background-position: 0 0;
   min-height: 100vh;
 }
 

@@ -18,7 +18,12 @@ export const DeliveryAddressSchema = z.object({
   streetAddress: z.string().min(8, "Alamat lengkap minimal 8 karakter"),
 });
 
-export const ShippingMethodEnum = z.enum(["AIR_EXPRESS", "SEA_ECONOMY"]);
+export const ShippingMethodEnum = z.enum([
+  "CARGO",
+  "HANDCARRY",
+  "AIR_EXPRESS",
+  "SEA_ECONOMY",
+]);
 
 export const AddOnsSchema = z.object({
   photoQc: z.boolean().default(false),

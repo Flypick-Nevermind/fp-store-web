@@ -3,18 +3,19 @@
 import confetti from "canvas-confetti";
 import {
   ArrowRight,
+  Check,
   CheckCircle2,
+  Copy,
   CreditCard,
   Loader2,
   Plane,
   QrCode,
+  Sparkles,
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Barcode } from "@/components/ui/barcode";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/atoms";
 import { formatIdr } from "@/lib/utils";
 import { useToast } from "@/providers/toast-provider";
 import { useCartStore } from "@/store/use-cart-store";
@@ -41,8 +42,17 @@ export function PaymentModal({
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
   const [createdOrderCode, setCreatedOrderCode] = useState<string>("");
+  const [copiedVa, setCopiedVa] = useState(false);
 
   if (!isOpen) return null;
+
+  const vaNumber = "8801 9821 7712 9001";
+
+  const handleCopyVa = () => {
+    navigator.clipboard?.writeText(vaNumber.replace(/\s+/g, ""));
+    setCopiedVa(true);
+    setTimeout(() => setCopiedVa(false), 2000);
+  };
 
   const handleSimulatePayment = async () => {
     setIsProcessing(true);
@@ -58,18 +68,18 @@ export function PaymentModal({
       // Launch celebration confetti
       try {
         confetti({
-          particleCount: 100,
-          spread: 70,
+          particleCount: 110,
+          spread: 80,
           origin: { y: 0.6 },
-          colors: ["#2323FF", "#00F0FF", "#FFDE00"],
+          colors: ["#1035D0", "#00F0FF", "#3B82F6"],
         });
       } catch (_e) {
         // fallback
       }
 
       success(
-        "Pembayaran Tahap 1 Sukses!",
-        `Tiket Order ${newOrder.id} telah diterbitkan dan masuk antrean Shanghai.`,
+        "Pembayaran Berhasil Diverifikasi!",
+        `Tiket Order ${newOrder.id} telah diterbitkan dan masuk antrean manifest.`,
       );
     }, 1200);
   };
@@ -80,21 +90,28 @@ export function PaymentModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1A1A24]/65 backdrop-blur-xs animate-in fade-in">
-      <div className="relative w-full max-w-lg bg-white border-3 border-[#2323FF] shadow-[8px_8px_0px_0px_#1A1A24] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/70 backdrop-blur-xs animate-in fade-in">
+      <div className="relative w-full max-w-lg bg-white rounded-3xl border border-[#DCE4EC] shadow-[0_24px_60px_-12px_rgba(16,53,208,0.25)] overflow-hidden">
         {/* Header */}
-        <div className="bg-[#2323FF] text-[#FFF8E1] p-4 flex items-center justify-between border-b-2 border-[#1A1A24]">
-          <div className="flex items-center gap-2">
-            <Plane className="w-5 h-5 text-[#00F0FF]" />
-            <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-white">
-              TERMINAL PEMBAYARAN TAHAP 1
-            </h3>
+        <div className="bg-[#1035D0] text-white p-4 sm:p-5 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[#00F0FF]">
+              <Plane className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-sans font-bold text-sm tracking-tight text-white uppercase">
+                Menu Pembayaran Tagihan
+              </h3>
+              <p className="text-[11px] text-[#93C5FD]">
+                Gate Keberangkatan &amp; Pembayaran Resmi
+              </p>
+            </div>
           </div>
           {!isPaid && (
             <button
               type="button"
               onClick={onClose}
-              className="text-white hover:text-[#00F0FF] p-1 cursor-pointer"
+              className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/10 cursor-pointer transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -102,148 +119,163 @@ export function PaymentModal({
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 space-y-6">
+        <div className="p-5 sm:p-7 space-y-6">
           {!isPaid ? (
             <>
               {/* Invoice Pill */}
-              <div className="p-4 bg-[#FFF8E1] border-2 border-[#1A1A24] flex items-center justify-between">
+              <div className="p-4 bg-[#EFF6FF] rounded-2xl border border-[#BFDBFE] flex items-center justify-between">
                 <div>
-                  <span className="font-mono text-[10px] text-[#1A1A24]/70 uppercase block">
-                    TOTAL TAGIHAN TAHAP 1:
+                  <span className="font-mono text-[11px] text-[#1E40AF] font-bold uppercase block">
+                    TOTAL YANG HARUS DIBAYAR:
                   </span>
-                  <p className="font-mono text-2xl font-black text-[#2323FF]">
+                  <p className="font-mono text-2xl font-black text-[#1035D0] mt-0.5">
                     {formatIdr(stage1TotalIdr)}
                   </p>
                 </div>
-                <Badge variant="electric">INSTANT VERIFIED</Badge>
+                <Badge variant="electric" className="text-[11px] font-mono">
+                  VERIFIKASI OTOMATIS
+                </Badge>
               </div>
 
               {/* Payment Method Selector */}
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 <button
                   type="button"
                   onClick={() => setPaymentMethod("QRIS")}
-                  className={`p-2.5 font-mono text-xs font-bold uppercase border-2 flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  className={`p-3 rounded-xl font-sans text-xs font-bold border-2 flex items-center justify-center gap-2 transition-all cursor-pointer ${
                     paymentMethod === "QRIS"
-                      ? "bg-[#2323FF] text-white border-[#1A1A24] shadow-[2px_2px_0px_0px_#1A1A24]"
-                      : "bg-white text-[#1A1A24] border-[#1A1A24]/30"
+                      ? "bg-[#1035D0] text-white border-[#1035D0] shadow-sm"
+                      : "bg-[#F8FAFC] text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
                   }`}
                 >
                   <QrCode className="w-4 h-4 text-[#00F0FF]" />
-                  QRIS (SEMUA E-WALLET)
+                  QRIS (GoPay/BCA/Dana)
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setPaymentMethod("VA")}
-                  className={`p-2.5 font-mono text-xs font-bold uppercase border-2 flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  className={`p-3 rounded-xl font-sans text-xs font-bold border-2 flex items-center justify-center gap-2 transition-all cursor-pointer ${
                     paymentMethod === "VA"
-                      ? "bg-[#2323FF] text-white border-[#1A1A24] shadow-[2px_2px_0px_0px_#1A1A24]"
-                      : "bg-white text-[#1A1A24] border-[#1A1A24]/30"
+                      ? "bg-[#1035D0] text-white border-[#1035D0] shadow-sm"
+                      : "bg-[#F8FAFC] text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
                   }`}
                 >
                   <CreditCard className="w-4 h-4 text-[#00F0FF]" />
-                  VIRTUAL ACCOUNT BCA
+                  Virtual Account
                 </button>
               </div>
 
               {/* QRIS / VA Display Box */}
               {paymentMethod === "QRIS" ? (
-                <div className="p-4 bg-white border-2 border-dashed border-[#1A1A24] flex flex-col items-center justify-center space-y-3 text-center">
-                  <div className="p-3 bg-white border-2 border-[#1A1A24] shadow-[3px_3px_0px_0px_#1A1A24]">
-                    {/* Simulated SVG QR Code */}
-                    <div className="w-44 h-44 bg-[#1A1A24] p-2 flex flex-col justify-between">
+                <div className="p-5 bg-white rounded-2xl border border-dashed border-[#CBD5E1] flex flex-col items-center justify-center space-y-3 text-center">
+                  <div className="p-3 bg-white rounded-xl border border-[#E2E8F0] shadow-md">
+                    {/* Stylized QR Code Illustration */}
+                    <div className="w-44 h-44 bg-[#0F172A] rounded-lg p-2.5 flex flex-col justify-between">
                       <div className="flex justify-between">
-                        <div className="w-10 h-10 border-4 border-white bg-transparent" />
-                        <div className="w-10 h-10 border-4 border-white bg-transparent" />
+                        <div className="w-10 h-10 border-4 border-white bg-transparent rounded-xs" />
+                        <div className="w-10 h-10 border-4 border-white bg-transparent rounded-xs" />
                       </div>
                       <div className="flex justify-center items-center">
-                        <div className="bg-[#00F0FF] text-[#1A1A24] font-mono font-black text-[10px] px-1 py-0.5 border border-white">
-                          FLYPICK
+                        <div className="bg-[#1035D0] text-[#00F0FF] font-sans font-black text-[10px] px-2 py-0.5 rounded border border-white/50 tracking-wider">
+                          FLYPICK QRIS
                         </div>
                       </div>
                       <div className="flex justify-between items-end">
-                        <div className="w-10 h-10 border-4 border-white bg-transparent" />
-                        <div className="w-6 h-6 bg-white" />
+                        <div className="w-10 h-10 border-4 border-white bg-transparent rounded-xs" />
+                        <div className="w-7 h-7 bg-[#00F0FF] rounded-xs" />
                       </div>
                     </div>
                   </div>
-                  <p className="font-mono text-[11px] text-[#1A1A24]/80">
+                  <p className="font-sans text-xs text-[#64748B]">
                     Scan via BCA Mobile, GoPay, OVO, ShopeePay, atau DANA
                   </p>
                 </div>
               ) : (
-                <div className="p-4 bg-white border-2 border-dashed border-[#1A1A24] space-y-2">
-                  <span className="font-mono text-xs text-[#1A1A24]/70">
-                    Nomor Virtual Account:
+                <div className="p-4 bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0] space-y-2">
+                  <span className="font-sans text-xs text-[#64748B] block">
+                    Nomor Virtual Account BCA:
                   </span>
-                  <p className="font-mono text-xl font-black text-[#2323FF] tracking-wider select-all">
-                    8801 9821 7712 9001
-                  </p>
-                  <p className="font-mono text-[11px] text-[#1A1A24]/60">
-                    Nama Penerima: <strong>FLYPICK INDONESIA REKSA</strong>
+                  <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-[#CBD5E1]">
+                    <p className="font-mono text-lg sm:text-xl font-black text-[#1035D0] tracking-wider">
+                      {vaNumber}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleCopyVa}
+                      className="p-1.5 text-xs font-bold text-[#1035D0] hover:bg-[#EFF6FF] rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
+                    >
+                      {copiedVa ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          <span className="text-emerald-600">Disalin</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Salin</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-[#64748B]">
+                    Nama Akun: <strong>FLYPICK INDONESIA REKSA</strong>
                   </p>
                 </div>
               )}
 
-              {/* Trigger mock simulation button */}
-              <Button
+              {/* Simulation payment button */}
+              <button
                 type="button"
-                variant="neon"
-                size="lg"
                 disabled={isProcessing}
                 onClick={handleSimulatePayment}
-                className="w-full flex items-center justify-center gap-2"
+                className="w-full flex items-center justify-center gap-2 py-3.5 px-5 bg-[#1035D0] hover:bg-[#0D2BAA] disabled:opacity-70 text-white font-sans font-bold text-sm rounded-xl shadow-[0_12px_24px_-4px_rgba(16,53,208,0.35)] transition-all cursor-pointer"
               >
                 {isProcessing ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-[#00F0FF]" />
-                    MEMPROSES PEMBAYARAN...
+                    <span>Memproses Pembayaran...</span>
                   </>
                 ) : (
                   <>
                     <CheckCircle2 className="w-4 h-4 text-[#00F0FF]" />
-                    SIMULASI BAYAR BERHASIL (MOCK GATEWAY)
+                    <span>Simulasi Bayar Berhasil (Test Gateway)</span>
                   </>
                 )}
-              </Button>
+              </button>
             </>
           ) : (
             /* Post-payment Success Card */
-            <div className="text-center space-y-5 animate-in zoom-in-95">
-              <div className="w-16 h-16 bg-[#FFF8E1] border-2 border-[#2323FF] rounded-full mx-auto flex items-center justify-center text-[#2323FF]">
-                <CheckCircle2 className="w-10 h-10" />
+            <div className="text-center space-y-5 animate-in zoom-in-95 py-2">
+              <div className="w-16 h-16 bg-[#EFF6FF] border border-[#BFDBFE] rounded-full mx-auto flex items-center justify-center text-[#1035D0] shadow-sm">
+                <CheckCircle2 className="w-9 h-9" />
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <Badge variant="electric">PEMBAYARAN DIVERIFIKASI</Badge>
-                <h2 className="font-mono text-xl font-black text-[#1A1A24] uppercase">
+                <h2 className="font-sans font-black text-xl text-[#0F172A] uppercase">
                   Tiket Order Diterbitkan!
                 </h2>
-                <p className="font-mono text-xs text-[#2323FF] font-bold">
-                  Kode Referensi: {createdOrderCode}
+                <p className="font-mono text-sm text-[#1035D0] font-black">
+                  Ref: {createdOrderCode}
                 </p>
-                <p className="text-xs text-[#1A1A24]/75 max-w-sm mx-auto">
-                  Paket Anda telah dimasukkan ke manifest kedatangan Gudang
-                  Shanghai. Pantau status penimbangan & foto barang di timeline
-                  pelacakan.
+                <p className="text-xs text-[#64748B] max-w-sm mx-auto pt-1 leading-relaxed">
+                  Pesanan Anda telah dimasukkan ke dalam manifest jadwal
+                  penerbangan Shanghai. Anda dapat memantau proses unboxing
+                  Photo QC di menu pelacakan.
                 </p>
               </div>
 
               <div className="pt-2">
-                <Button
+                <button
                   type="button"
-                  variant="neon"
-                  size="lg"
                   onClick={handleGoToTracking}
-                  className="w-full flex items-center justify-center gap-2"
+                  className="w-full flex items-center justify-center gap-2 py-3.5 px-5 bg-[#1035D0] hover:bg-[#0D2BAA] text-white font-sans font-bold text-sm rounded-xl shadow-[0_12px_24px_-4px_rgba(16,53,208,0.35)] transition-all cursor-pointer"
                 >
-                  <span>LIHAT TIMELINE & STATUS GUDANG</span>
+                  <span>Lihat Timeline &amp; Lacak Pesanan</span>
                   <ArrowRight className="w-4 h-4 text-[#00F0FF]" />
-                </Button>
+                </button>
               </div>
-
-              <Barcode value={createdOrderCode} height={24} />
             </div>
           )}
         </div>
