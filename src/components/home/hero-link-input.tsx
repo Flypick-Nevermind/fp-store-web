@@ -9,11 +9,13 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { BRANDING } from "@/config/branding";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/providers/toast-provider";
+import { useAuthStore } from "@/store/use-auth-store";
 import { useCartStore } from "@/store/use-cart-store";
-import type { CartItem } from "@/types";
+import { useSubmissionStore } from "@/store/use-submission-store";
+import { SubmissionConfirmationModal } from "@/components/intake/submission-confirmation-modal";
+import type { SubmissionRecord } from "@/types/submission";
 
 export interface PlatformConfig {
   id: string;
@@ -115,6 +117,12 @@ export function HeroLinkInput({ className }: HeroLinkInputProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [inputUrl, setInputUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+  const [confirmationRecord, setConfirmationRecord] =
+    useState<SubmissionRecord | null>(null);
+
+  const user = useAuthStore((s) => s.user);
+  const createSubmission = useSubmissionStore((s) => s.createSubmission);
 
   const handleSubmit = async (overrideUrl?: string) => {
     const rawUrl = (overrideUrl !== undefined ? overrideUrl : inputUrl).trim();
@@ -131,46 +139,31 @@ export function HeroLinkInput({ className }: HeroLinkInputProps) {
     setIsSubmitting(true);
 
     try {
-      // Simulate quick link intake & scraping
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-      const sample = selectedPlatform.sampleProduct;
-      const newItemId = `FP-LINK-${Date.now().toString().slice(-6)}`;
-      const priceIdr = Math.round(sample.cny * BRANDING.exchangeRate.cnyToIdr);
+      const newRecord = createSubmission({
+        userName: user?.name || "Tamu FLYPICK",
+        userPhone: user?.phone || "081288992211",
+        userEmail: user?.email,
+        userId: user?.id,
+        warehouseCode: user?.warehouseCode,
+        links: [
+          {
+            url: finalUrl,
+            userNotes: `Input via ${selectedPlatform.name}`,
+          },
+        ],
+      });
 
-      const newCartItem: CartItem = {
-        id: newItemId,
-        serviceType: "BUY_FOR_ME",
-        sourceUrl: finalUrl,
-        productName: sample.name,
-        priceCny: sample.cny,
-        exchangeRate: BRANDING.exchangeRate.cnyToIdr,
-        priceIdr,
-        selectedVariant: {
-          color: sample.color,
-          size: sample.size,
-          skuId: `SKU-${selectedPlatform.id.toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`,
-        },
-        quantity: 1, // 1 link = 1 variant initially, with quantity per link in cart
-        notes: `Imported via ${selectedPlatform.name} Express Link Intake.`,
-        imageUrl: sample.imageUrl,
-      };
-
-      // Add to persistent Zustand cart
-      addItem(newCartItem);
-
-      success(
-        "Link Berhasil Ditambahkan!",
-        `${sample.name.slice(0, 36)}... siap diatur di keranjang.`,
-      );
-
-      // Directly proceed to the cart page as requested by user
-      router.push("/cart");
+      setInputUrl("");
+      setConfirmationRecord(newRecord);
+      setIsConfirmationOpen(true);
     } catch (_err) {
       error(
-        "Gagal Membaca Link",
+        "Gagal Memproses Link",
         "Mohon periksa kembali tautan yang dimasukkan.",
       );
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -334,6 +327,13 @@ export function HeroLinkInput({ className }: HeroLinkInputProps) {
           ⌨️ Alibaba Mechanical Keyboard (¥156)
         </button>
       </div>
+
+      {/* Confirmation Modal */}
+      <SubmissionConfirmationModal
+        isOpen={isConfirmationOpen}
+        onClose={() => setIsConfirmationOpen(false)}
+        submission={confirmationRecord}
+      />
     </div>
   );
 }

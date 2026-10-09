@@ -1,16 +1,43 @@
 "use client";
 
-import { ArrowLeft, PackagePlus, ShoppingBag, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Cloud,
+  Loader2,
+  PackagePlus,
+  ShoppingBag,
+  Trash2,
+} from "lucide-react";
 import Link from "next/link";
+import { useEffect } from "react";
 import { Badge } from "@/components/atoms";
 import { EmptyState } from "@/components/molecules";
 import { CartItemCard } from "@/components/organisms/cart-item-card";
 import { CartSummary } from "@/components/organisms/cart-summary";
 import { BRANDING } from "@/config/branding";
 import { useCartActions } from "@/hooks/use-cart-actions";
+import { useUserCartsQuery } from "@/hooks/use-cart-api";
+import { useAuthStore } from "@/store/use-auth-store";
 
 export function CartTemplate() {
-  const { items, clearCart } = useCartActions();
+  const { items, addItem, clearCart } = useCartActions();
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  const { data: serverCarts, isLoading: isSyncingServerCarts } =
+    useUserCartsQuery(user?.id);
+
+  // Synchronize server-side carts into the cart store
+  useEffect(() => {
+    if (serverCarts && serverCarts.length > 0) {
+      const existingIds = new Set(items.map((i) => i.id));
+      serverCarts.forEach((serverItem) => {
+        if (!existingIds.has(serverItem.id)) {
+          addItem(serverItem);
+        }
+      });
+    }
+  }, [serverCarts, items, addItem]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-6">
@@ -43,12 +70,23 @@ export function CartTemplate() {
 
         {items.length > 0 && (
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            {isAuthenticated && user && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 font-mono text-xs font-bold shadow-xs">
+                {isSyncingServerCarts ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                ) : (
+                  <Cloud className="w-3.5 h-3.5 text-emerald-600" />
+                )}
+                <span>Cloud Sync: {user.warehouseCode}</span>
+              </div>
+            )}
+
             <Link
               href="/"
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#1035D0] border border-[#BFDBFE] text-xs font-bold transition-colors cursor-pointer"
             >
               <PackagePlus className="w-4 h-4 text-[#1035D0]" />
-              <span>+ Tambah Link Lagi dari Depan</span>
+              <span>+ Tambah Link Lagi</span>
             </Link>
 
             <button

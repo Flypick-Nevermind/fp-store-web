@@ -1,5 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
+import { cartLookupApi, extractCartImageUrl, parsePrice } from "@/lib/api/cart";
 import { chinaMarketplaceUrlRegex } from "@/schemas/buy-for-me";
+import { useAuthStore } from "@/store/use-auth-store";
 
 export interface ScrapedProductData {
   productName: string;
@@ -106,12 +108,46 @@ export function simulateProductScrape(
         rating: sample.rating || "4.9 ★",
         originalUrl: url,
       });
-    }, 900); // 900ms simulated scrape latency
+    }, 600);
   });
 }
 
 export function useScrapeProductMutation() {
+  const user = useAuthStore((s) => s.user);
+
   return useMutation({
-    mutationFn: (url: string) => simulateProductScrape(url),
+    mutationFn: async (url: string) => {
+      if (user?.id) {
+        try {
+          const apiRes = await cartLookupApi({
+            cart_url: url,
+            user_id: user.id,
+          });
+          const { priceCny } = parsePrice(apiRes.cart_price);
+          const imageUrl = extractCartImageUrl(apiRes.cart_images);
+          const lower = url.toLowerCase();
+          let sourceDomain: "Taobao" | "Tmall" | "1688" = "Taobao";
+          if (lower.includes("tmall.com")) sourceDomain = "Tmall";
+          if (lower.includes("1688.com")) sourceDomain = "1688";
+
+          return {
+            productName: apiRes.cart_title || "Produk Import Marketplace China",
+            priceCny,
+            imageUrl,
+            sourceDomain,
+            variants: {
+              colors: ["Default Color"],
+              sizes: ["Standard Size"],
+            },
+            sellerName: `${sourceDomain} Verified Merchant`,
+            rating: "4.9 ★",
+            originalUrl: url,
+          };
+        } catch {
+          // Gracefully fallback to scraper simulator if offline or error
+        }
+      }
+      return simulateProductScrape(url);
+    },
   });
 }

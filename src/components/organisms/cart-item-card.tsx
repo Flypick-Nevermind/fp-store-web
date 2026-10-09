@@ -104,6 +104,12 @@ export function CartItemCard({ item }: CartItemCardProps) {
                   </span>
                 </a>
               )}
+
+              {bfmItem.notes && (
+                <div className="p-2 bg-[#FFF8E1] rounded-lg border border-amber-200 text-[11px] text-[#854D0E] font-medium leading-relaxed">
+                  {bfmItem.notes}
+                </div>
+              )}
             </div>
           )}
 

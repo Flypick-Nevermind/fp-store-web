@@ -7,6 +7,7 @@ import {
   OrderTimeline,
   VirtualWarehouseCard,
 } from "@/components/organisms";
+import { UserSubmissionsList } from "@/components/profile/user-submissions-list";
 import { useOrderTracking } from "@/hooks/use-order-tracking";
 
 export function ProfileTemplate() {
@@ -76,13 +77,18 @@ export function ProfileTemplate() {
         </div>
       </div>
 
-      {/* Main Section 1: Virtual Warehouse Card */}
+      {/* Main Section 1: User Multi-Link Submissions & Admin Reviews */}
       <section className="space-y-4">
+        <UserSubmissionsList />
+      </section>
+
+      {/* Main Section 2: Virtual Warehouse Card */}
+      <section className="space-y-4 pt-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Warehouse className="w-5 h-5 text-[#2323FF]" />
             <h2 className="font-mono text-base sm:text-lg font-black uppercase text-[#1A1A24]">
-              1. Kartu Identitas Gudang Shanghai (Virtual Luggage Pass)
+              2. Kartu Identitas Gudang Shanghai (Virtual Luggage Pass)
             </h2>
           </div>
           <Badge variant="electric">AKTIF &amp; SIAP TERIMA PAKET</Badge>
@@ -91,13 +97,13 @@ export function ProfileTemplate() {
         <VirtualWarehouseCard />
       </section>
 
-      {/* Main Section 2: Order Timeline & Cargo Status */}
+      {/* Main Section 3: Order Timeline & Cargo Status */}
       <section className="space-y-4 pt-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Plane className="w-5 h-5 text-[#2323FF]" />
             <h2 className="font-mono text-base sm:text-lg font-black uppercase text-[#1A1A24]">
-              2. Manifest Pesanan &amp; Timeline Pelacakan Kargo
+              3. Manifest Pesanan &amp; Timeline Pelacakan Kargo
             </h2>
           </div>
           <Badge variant="neon">{orders.length} TIKET PESANAN</Badge>

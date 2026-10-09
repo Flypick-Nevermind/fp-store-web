@@ -87,7 +87,7 @@ export interface CartLookupPayload {
 
 export interface CartLookupResponseData {
   cart_id: string;
-  cart_images: string[];
+  cart_images: CartImageItem[] | string[];
   cart_price: string;
   cart_title: string;
   cart_url: string;

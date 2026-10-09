@@ -1,11 +1,16 @@
 "use client";
 
-import { Clock, ShieldCheck, Zap } from "lucide-react";
+import { Clock, Layers, ShieldCheck, Zap } from "lucide-react";
+import { useState } from "react";
 import { FlypickLogoIcon } from "@/components/branding/flypick-logo-icon";
 import { HeroAviationVisual } from "@/components/home/hero-aviation-visual";
 import { HeroLinkInput } from "@/components/home/hero-link-input";
+import { MultiLinkIntakeForm } from "@/components/intake/multi-link-intake-form";
+import { cn } from "@/lib/utils";
 
 export function LandingTemplate() {
+  const [inputMode, setInputMode] = useState<"multi" | "quick">("multi");
+
   return (
     <div className="relative min-h-[calc(100vh-76px)] flex flex-col justify-between items-center px-4 sm:px-6 lg:px-8 py-6 sm:py-10 overflow-hidden bg-[#FAF8F5]">
       {/* ── Background Aviation Visuals (Ticket, dashed flight trail, airplane) ── */}
@@ -34,13 +39,50 @@ export function LandingTemplate() {
           </h1>
 
           <p className="text-[#475569] text-xs sm:text-sm md:text-base font-normal max-w-md mx-auto pt-1 font-sans">
-            Drop your link here. We&apos;ll handle the delivery.
+            Kirim link belanja China kamu. Admin kami cek langsung ketersediaan
+            &amp; kirim ke depan pintu rumahmu.
           </p>
         </div>
 
-        {/* ── Floating Pill Link Input (Direct Intake to Cart) ───── */}
-        <div className="w-full max-w-2xl px-2">
-          <HeroLinkInput />
+        {/* ── Mode Switcher & Form Container ───────────────────────── */}
+        <div className="w-full max-w-2xl px-2 space-y-4">
+          <div className="inline-flex items-center justify-center p-1 bg-white/80 backdrop-blur-sm rounded-full border border-[#DCE4EC] shadow-2xs">
+            <button
+              type="button"
+              onClick={() => setInputMode("multi")}
+              className={cn(
+                "px-4 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
+                inputMode === "multi"
+                  ? "bg-[#1035D0] text-white shadow-xs"
+                  : "text-[#64748B] hover:text-[#0F172A]",
+              )}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Form Multi-Link (Tambah Baris)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setInputMode("quick")}
+              className={cn(
+                "px-4 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
+                inputMode === "quick"
+                  ? "bg-[#1035D0] text-white shadow-xs"
+                  : "text-[#64748B] hover:text-[#0F172A]",
+              )}
+            >
+              <Zap className="w-3.5 h-3.5" />
+              <span>Input 1 Link Cepat</span>
+            </button>
+          </div>
+
+          {/* Form Render */}
+          {inputMode === "multi" ? (
+            <MultiLinkIntakeForm className="animate-in fade-in zoom-in-95 duration-200" />
+          ) : (
+            <div className="animate-in fade-in zoom-in-95 duration-200">
+              <HeroLinkInput />
+            </div>
+          )}
         </div>
       </div>
 

@@ -4,11 +4,12 @@ import {
   ChevronDown,
   LogOut,
   Search,
+  ShieldCheck,
   ShoppingBag,
-  User,
   Warehouse,
   X,
 } from "lucide-react";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -123,6 +124,19 @@ export function Navbar() {
             >
               Promo
             </button>
+
+            <Link
+              href="/admin"
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1 rounded-full font-mono text-xs font-bold transition-all cursor-pointer",
+                pathname === "/admin"
+                  ? "bg-[#1035D0] text-white shadow-xs"
+                  : "bg-amber-100/80 text-amber-900 hover:bg-amber-200 border border-amber-300",
+              )}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-700" />
+              <span>Admin Cek Link</span>
+            </Link>
           </nav>
 
           {/* ── Right Actions: Search, Cart, Masuk / User Profile Menu ──────── */}
@@ -215,6 +229,15 @@ export function Navbar() {
                       >
                         <ShoppingBag className="w-4 h-4 text-[#1035D0]" />
                         <span>KERANJANG SAYA</span>
+                      </Link>
+
+                      <Link
+                        href="/admin"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-all"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-amber-700" />
+                        <span>PORTAL ADMIN (CEK LINK)</span>
                       </Link>
                     </div>
 
