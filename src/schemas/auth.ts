@@ -25,3 +25,33 @@ export const AuthSchema = z.union([AuthPhoneSchema, GoogleAuthCallbackSchema]);
 export type AuthPhoneInput = z.infer<typeof AuthPhoneSchema>;
 export type GoogleAuthCallbackInput = z.infer<typeof GoogleAuthCallbackSchema>;
 export type AuthInput = z.infer<typeof AuthSchema>;
+
+// Backend API schemas
+export const LoginSchema = z.object({
+  user_email: z.string().email("Format email tidak valid"),
+  user_password: z.string().min(6, "Password minimal 6 karakter"),
+});
+
+export type LoginInput = z.infer<typeof LoginSchema>;
+
+export const RegisterSchema = z.object({
+  user_name: z.string().min(2, "Nama minimal 2 karakter"),
+  user_email: z.string().email("Format email tidak valid"),
+  user_password: z.string().min(6, "Password minimal 6 karakter"),
+  user_phone: z
+    .string()
+    .min(10, "Nomor telepon minimal 10 digit")
+    .max(15, "Nomor telepon maksimal 15 digit"),
+});
+
+export type RegisterInput = z.infer<typeof RegisterSchema>;
+
+export const VerifyOtpSchema = z.object({
+  user_email: z.string().email("Format email tidak valid"),
+  otp: z
+    .string()
+    .min(4, "Kode OTP minimal 4 digit")
+    .max(8, "Kode OTP maksimal 8 digit"),
+});
+
+export type VerifyOtpInput = z.infer<typeof VerifyOtpSchema>;

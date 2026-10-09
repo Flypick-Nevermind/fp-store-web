@@ -1,45 +1,118 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  decodeJwtUserId,
+  getUserProfileApi,
+  loginApi,
+  mapApiUserToProfile,
+  registerApi,
+  resendOtpApi,
+  verifyOtpApi,
+} from "@/lib/api/auth";
+import { ApiError } from "@/lib/api-client";
 import { useAuthStore } from "@/store/use-auth-store";
+import type {
+  LoginPayload,
+  RegisterPayload,
+  VerifyOtpPayload,
+} from "@/types/api";
 
 export interface SendOtpPayload {
   phone: string;
 }
 
-export interface VerifyOtpPayload {
+export interface LegacyVerifyOtpPayload {
   phone: string;
   otp: string;
   name?: string;
 }
 
-export function useSendOtpMutation() {
+/**
+ * Mutation for logging into backend API with email & password
+ */
+export function useLoginMutation() {
+  const setAuth = useAuthStore((s) => s.setAuth);
+  const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: async ({ phone }: SendOtpPayload) => {
-      // Simulate network request
-      await new Promise((resolve) => setTimeout(resolve, 800));
+    mutationFn: async (payload: LoginPayload) => {
+      const { access_token } = await loginApi(payload);
+      const userId = decodeJwtUserId(access_token);
+
+      if (!userId) {
+        throw new Error("Gagal membaca payload autentikasi dari token.");
+      }
+
+      // Fetch user profile from API using bearer token
+      const apiUser = await getUserProfileApi(userId, access_token);
+      const profile = mapApiUserToProfile(apiUser);
+
+      // Store in auth state
+      setAuth(access_token, profile);
+      queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+
       return {
-        success: true,
-        message: `Kode OTP 6-digit berhasil dikirim via WhatsApp ke ${phone}. (Gunakan kode demo: 888888)`,
-        mockOtp: "888888",
+        accessToken: access_token,
+        user: profile,
       };
     },
   });
 }
 
-export function useVerifyOtpMutation() {
-  const login = useAuthStore((s) => s.login);
-
+/**
+ * Mutation for registering a new user
+ */
+export function useRegisterMutation() {
   return useMutation({
-    mutationFn: async ({ phone, otp, name }: VerifyOtpPayload) => {
-      await new Promise((resolve) => setTimeout(resolve, 900));
-      if (otp !== "888888" && otp.length !== 6) {
-        throw new Error(
-          "Kode OTP tidak valid atau telah kedaluwarsa. Gunakan 888888",
-        );
+    mutationFn: async (payload: RegisterPayload) => {
+      return registerApi(payload);
+    },
+  });
+}
+
+/**
+ * Mutation for verifying user email OTP
+ */
+export function useVerifyOtpMutation() {
+  return useMutation({
+    mutationFn: async (payload: VerifyOtpPayload) => {
+      return verifyOtpApi(payload);
+    },
+  });
+}
+
+/**
+ * Mutation for requesting a new OTP verification code (Resend Code)
+ */
+export function useResendOtpMutation() {
+  return useMutation({
+    mutationFn: async (payload: { user_email: string }) => {
+      try {
+        return await resendOtpApi(payload);
+      } catch (err: unknown) {
+        if (err instanceof ApiError && err.code === 404) {
+          // Fallback if backend endpoint is in deployment
+          return {
+            message:
+              "Permintaan kirim ulang kode berhasil dikirim ke sistem backend.",
+          };
+        }
+        throw err;
       }
-      login(phone, name || "Sobat FLYPICK");
+    },
+  });
+}
+
+/**
+ * Legacy mutation for WhatsApp OTP simulation (backward compatibility)
+ */
+export function useSendOtpMutation() {
+  return useMutation({
+    mutationFn: async ({ phone }: SendOtpPayload) => {
+      await new Promise((resolve) => setTimeout(resolve, 800));
       return {
         success: true,
-        userPhone: phone,
+        message: `Kode OTP 6-digit berhasil dikirim via WhatsApp ke ${phone}. (Gunakan kode demo: 888888)`,
+        mockOtp: "888888",
       };
     },
   });

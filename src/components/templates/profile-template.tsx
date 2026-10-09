@@ -70,7 +70,7 @@ export function ProfileTemplate() {
               onClick={openLoginModal}
             >
               <LogIn className="w-4 h-4 mr-2" />
-              MASUK DENGAN WHATSAPP / GOOGLE
+              MASUK / DAFTAR AKUN
             </Button>
           )}
         </div>

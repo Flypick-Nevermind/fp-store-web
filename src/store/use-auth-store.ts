@@ -5,9 +5,12 @@ import type { ChinaWarehouseAddress, UserProfile } from "@/types";
 
 interface AuthState {
   user: UserProfile | null;
+  token: string | null;
   isAuthenticated: boolean;
+  setAuth: (token: string, user: UserProfile) => void;
+  setToken: (token: string | null) => void;
+  setUser: (user: UserProfile | null) => void;
   login: (phone: string, name?: string) => void;
-  loginWithGoogle: (email: string, name: string) => void;
   logout: () => void;
   updateProfile: (updates: Partial<UserProfile>) => void;
 }
@@ -29,18 +32,21 @@ const buildDefaultAddress = (
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      user: {
-        id: "usr_guest_8821",
-        name: "Ahmad Fikri",
-        phone: "+6281299887766",
-        warehouseCode: BRANDING.defaultWarehouseCode,
-        addressChina: buildDefaultAddress(
-          BRANDING.defaultWarehouseCode,
-          "Ahmad Fikri",
-        ),
-        createdAt: "2026-10-04T00:00:00.000Z",
+      user: null,
+      token: null,
+      isAuthenticated: false,
+
+      setAuth: (token: string, user: UserProfile) => {
+        set({ token, user, isAuthenticated: true });
       },
-      isAuthenticated: true,
+
+      setToken: (token: string | null) => {
+        set({ token });
+      },
+
+      setUser: (user: UserProfile | null) => {
+        set({ user, isAuthenticated: !!user });
+      },
 
       login: (phone: string, name = "Sobat FLYPICK") => {
         const code = `FP-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -52,25 +58,11 @@ export const useAuthStore = create<AuthState>()(
           addressChina: buildDefaultAddress(code, name),
           createdAt: new Date().toISOString(),
         };
-        set({ user, isAuthenticated: true });
-      },
-
-      loginWithGoogle: (email: string, name: string) => {
-        const code = `FP-${Math.floor(1000 + Math.random() * 9000)}`;
-        const user: UserProfile = {
-          id: `usr_g_${Date.now()}`,
-          name,
-          email,
-          phone: "+6281200001111",
-          warehouseCode: code,
-          addressChina: buildDefaultAddress(code, name),
-          createdAt: new Date().toISOString(),
-        };
-        set({ user, isAuthenticated: true });
+        set({ user, token: null, isAuthenticated: true });
       },
 
       logout: () => {
-        set({ user: null, isAuthenticated: false });
+        set({ user: null, token: null, isAuthenticated: false });
       },
 
       updateProfile: (updates) => {
