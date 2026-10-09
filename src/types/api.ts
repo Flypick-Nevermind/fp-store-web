@@ -50,6 +50,11 @@ export interface ResendOtpPayload {
   user_email: string;
 }
 
+export interface ResendOtpResponseData {
+  user_id: string;
+  user_name: string;
+}
+
 export interface ApiUserData {
   user_id: string;
   user_name: string;

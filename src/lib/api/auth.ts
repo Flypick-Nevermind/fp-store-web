@@ -8,6 +8,7 @@ import type {
   RegisterPayload,
   RegisterResponseData,
   ResendOtpPayload,
+  ResendOtpResponseData,
   VerifyOtpPayload,
   VerifyOtpResponseData,
 } from "@/types/api";
@@ -105,8 +106,8 @@ export async function getUserProfileApi(
 
 export async function resendOtpApi(
   payload: ResendOtpPayload,
-): Promise<{ message?: string }> {
-  return apiClient<{ message?: string }>("/api/v1/auth/resend-otp", {
+): Promise<ResendOtpResponseData> {
+  return apiClient<ResendOtpResponseData>("/api/v1/auth/resend-otp", {
     method: "POST",
     body: JSON.stringify(payload),
   });

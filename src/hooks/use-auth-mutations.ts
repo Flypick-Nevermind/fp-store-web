@@ -8,8 +8,8 @@ import {
   resendOtpApi,
   verifyOtpApi,
 } from "@/lib/api/auth";
-import { ApiError } from "@/lib/api-client";
 import { useAuthStore } from "@/store/use-auth-store";
+
 import type {
   LoginPayload,
   RegisterPayload,
@@ -86,18 +86,7 @@ export function useVerifyOtpMutation() {
 export function useResendOtpMutation() {
   return useMutation({
     mutationFn: async (payload: { user_email: string }) => {
-      try {
-        return await resendOtpApi(payload);
-      } catch (err: unknown) {
-        if (err instanceof ApiError && err.code === 404) {
-          // Fallback if backend endpoint is in deployment
-          return {
-            message:
-              "Permintaan kirim ulang kode berhasil dikirim ke sistem backend.",
-          };
-        }
-        throw err;
-      }
+      return resendOtpApi(payload);
     },
   });
 }

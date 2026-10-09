@@ -23,6 +23,7 @@ import { useForm } from "react-hook-form";
 import { Badge } from "@/components/ui/badge";
 import { Barcode } from "@/components/ui/barcode";
 import { Button } from "@/components/ui/button";
+import { BRANDING } from "@/config/branding";
 import {
   useLoginMutation,
   useRegisterMutation,
@@ -38,7 +39,6 @@ import {
   type VerifyOtpInput,
   VerifyOtpSchema,
 } from "@/schemas/auth";
-import { BRANDING } from "@/config/branding";
 import { useAuthStore } from "@/store/use-auth-store";
 
 interface LoginModalProps {
@@ -49,8 +49,9 @@ interface LoginModalProps {
 type AuthMode = "LOGIN" | "REGISTER" | "OTP" | "FORGOT";
 
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
-  const { success, error, info } = useToast();
+  const { success, error } = useToast();
   const [mode, setMode] = useState<AuthMode>("LOGIN");
+
   const [activeEmail, setActiveEmail] = useState("");
   const [tempPassword, setTempPassword] = useState("");
   const [resendCountdown, setResendCountdown] = useState(60);
@@ -196,14 +197,24 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const handleResendOtp = async () => {
     if (resendCountdown > 0 || resendOtpMutation.isPending) return;
     const targetEmail = activeEmail || otpForm.getValues("user_email");
-    if (!targetEmail) return;
+    if (!targetEmail) {
+      error(
+        "Email Tidak Ditemukan",
+        "Silakan masukkan email pendaftaran Anda terlebih dahulu.",
+      );
+      return;
+    }
 
     try {
-      await resendOtpMutation.mutateAsync({ user_email: targetEmail });
+      const res = await resendOtpMutation.mutateAsync({
+        user_email: targetEmail,
+      });
       setResendCountdown(60);
       success(
         "Kode OTP Dikirim Ulang!",
-        `Kode verifikasi baru telah dikirimkan ke email ${targetEmail}.`,
+        `Kode verifikasi baru telah dikirimkan ke email ${targetEmail}.${
+          res?.user_name ? ` (Halo, ${res.user_name})` : ""
+        }`,
       );
     } catch (err: unknown) {
       const msg =
