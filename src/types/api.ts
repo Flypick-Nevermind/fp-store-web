@@ -55,6 +55,24 @@ export interface ResendOtpResponseData {
   user_name: string;
 }
 
+export interface ResetPasswordPayload {
+  user_email: string;
+}
+
+export interface ResetPasswordResponseData {
+  user_email: string;
+}
+
+export interface ConfirmResetPasswordPayload {
+  user_email: string;
+  otp: string;
+  new_password: string;
+}
+
+export interface ConfirmResetPasswordResponseData {
+  user_id: string;
+}
+
 export interface ApiUserData {
   user_id: string;
   user_name: string;

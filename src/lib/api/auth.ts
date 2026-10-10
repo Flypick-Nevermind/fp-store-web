@@ -3,12 +3,16 @@ import { apiClient } from "@/lib/api-client";
 import type { ChinaWarehouseAddress, UserProfile } from "@/types";
 import type {
   ApiUserData,
+  ConfirmResetPasswordPayload,
+  ConfirmResetPasswordResponseData,
   LoginPayload,
   LoginResponseData,
   RegisterPayload,
   RegisterResponseData,
   ResendOtpPayload,
   ResendOtpResponseData,
+  ResetPasswordPayload,
+  ResetPasswordResponseData,
   VerifyOtpPayload,
   VerifyOtpResponseData,
 } from "@/types/api";
@@ -111,4 +115,25 @@ export async function resendOtpApi(
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export async function resetPasswordApi(
+  payload: ResetPasswordPayload,
+): Promise<ResetPasswordResponseData> {
+  return apiClient<ResetPasswordResponseData>("/api/v1/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function confirmResetPasswordApi(
+  payload: ConfirmResetPasswordPayload,
+): Promise<ConfirmResetPasswordResponseData> {
+  return apiClient<ConfirmResetPasswordResponseData>(
+    "/api/v1/auth/confirm-reset-password",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
 }

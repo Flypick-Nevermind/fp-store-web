@@ -1,18 +1,22 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+  confirmResetPasswordApi,
   decodeJwtUserId,
   getUserProfileApi,
   loginApi,
   mapApiUserToProfile,
   registerApi,
   resendOtpApi,
+  resetPasswordApi,
   verifyOtpApi,
 } from "@/lib/api/auth";
 import { useAuthStore } from "@/store/use-auth-store";
 
 import type {
+  ConfirmResetPasswordPayload,
   LoginPayload,
   RegisterPayload,
+  ResetPasswordPayload,
   VerifyOtpPayload,
 } from "@/types/api";
 
@@ -87,6 +91,28 @@ export function useResendOtpMutation() {
   return useMutation({
     mutationFn: async (payload: { user_email: string }) => {
       return resendOtpApi(payload);
+    },
+  });
+}
+
+/**
+ * Mutation for requesting a password reset email code
+ */
+export function useResetPasswordMutation() {
+  return useMutation({
+    mutationFn: async (payload: ResetPasswordPayload) => {
+      return resetPasswordApi(payload);
+    },
+  });
+}
+
+/**
+ * Mutation for confirming password reset with OTP code and setting new password
+ */
+export function useConfirmResetPasswordMutation() {
+  return useMutation({
+    mutationFn: async (payload: ConfirmResetPasswordPayload) => {
+      return confirmResetPasswordApi(payload);
     },
   });
 }

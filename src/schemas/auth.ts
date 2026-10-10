@@ -55,3 +55,59 @@ export const VerifyOtpSchema = z.object({
 });
 
 export type VerifyOtpInput = z.infer<typeof VerifyOtpSchema>;
+
+export const ResetPasswordSchema = z.object({
+  user_email: z.string().email("Format email tidak valid"),
+});
+
+export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;
+
+export const ConfirmResetPasswordSchema = z
+  .object({
+    user_email: z.string().email("Format email tidak valid"),
+    otp: z
+      .string()
+      .min(3, "Kode reset minimal 3 karakter")
+      .max(10, "Kode reset maksimal 10 karakter"),
+    new_password: z
+      .string()
+      .min(6, "Password baru minimal 6 karakter")
+      .max(50, "Password baru maksimal 50 karakter"),
+    confirm_password: z
+      .string()
+      .min(6, "Konfirmasi password minimal 6 karakter"),
+  })
+  .refine((data) => data.new_password === data.confirm_password, {
+    message: "Konfirmasi password tidak cocok",
+    path: ["confirm_password"],
+  });
+
+export type ConfirmResetPasswordInput = z.infer<
+  typeof ConfirmResetPasswordSchema
+>;
+
+export const ResetOtpSchema = z.object({
+  otp: z
+    .string()
+    .min(3, "Kode OTP minimal 3 karakter")
+    .max(10, "Kode OTP maksimal 10 karakter"),
+});
+
+export type ResetOtpInput = z.infer<typeof ResetOtpSchema>;
+
+export const NewPasswordSchema = z
+  .object({
+    new_password: z
+      .string()
+      .min(6, "Password baru minimal 6 karakter")
+      .max(50, "Password baru maksimal 50 karakter"),
+    confirm_password: z
+      .string()
+      .min(6, "Konfirmasi password minimal 6 karakter"),
+  })
+  .refine((data) => data.new_password === data.confirm_password, {
+    message: "Konfirmasi password tidak cocok",
+    path: ["confirm_password"],
+  });
+
+export type NewPasswordInput = z.infer<typeof NewPasswordSchema>;

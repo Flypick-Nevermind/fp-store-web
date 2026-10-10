@@ -23,19 +23,24 @@ import { useForm } from "react-hook-form";
 import { Badge } from "@/components/ui/badge";
 import { Barcode } from "@/components/ui/barcode";
 import { Button } from "@/components/ui/button";
-import { BRANDING } from "@/config/branding";
 import {
+  useConfirmResetPasswordMutation,
   useLoginMutation,
   useRegisterMutation,
   useResendOtpMutation,
+  useResetPasswordMutation,
   useVerifyOtpMutation,
 } from "@/hooks/use-auth-mutations";
 import { useToast } from "@/providers/toast-provider";
 import {
+  type ConfirmResetPasswordInput,
+  ConfirmResetPasswordSchema,
   type LoginInput,
   LoginSchema,
   type RegisterInput,
   RegisterSchema,
+  type ResetPasswordInput,
+  ResetPasswordSchema,
   type VerifyOtpInput,
   VerifyOtpSchema,
 } from "@/schemas/auth";
@@ -46,7 +51,12 @@ interface LoginModalProps {
   onClose: () => void;
 }
 
-type AuthMode = "LOGIN" | "REGISTER" | "OTP" | "FORGOT";
+type AuthMode =
+  | "LOGIN"
+  | "REGISTER"
+  | "OTP"
+  | "RESET_REQUEST"
+  | "RESET_CONFIRM";
 
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const { success, error } = useToast();
@@ -58,6 +68,13 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
 
+  // Reset password states
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetCountdown, setResetCountdown] = useState(60);
+  const [showResetNewPassword, setShowResetNewPassword] = useState(false);
+  const [showResetConfirmPassword, setShowResetConfirmPassword] =
+    useState(false);
+
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const logout = useAuthStore((s) => s.logout);
@@ -66,6 +83,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const registerMutation = useRegisterMutation();
   const verifyOtpMutation = useVerifyOtpMutation();
   const resendOtpMutation = useResendOtpMutation();
+  const resetPasswordMutation = useResetPasswordMutation();
+  const confirmResetPasswordMutation = useConfirmResetPasswordMutation();
 
   // Resend OTP countdown timer
   useEffect(() => {
@@ -75,6 +94,15 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     }, 1000);
     return () => clearInterval(timer);
   }, [mode, resendCountdown]);
+
+  // Reset Password OTP countdown timer
+  useEffect(() => {
+    if (mode !== "RESET_CONFIRM" || resetCountdown <= 0) return;
+    const timer = setInterval(() => {
+      setResetCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [mode, resetCountdown]);
 
   // Form for Login
   const loginForm = useForm<LoginInput>({
@@ -102,6 +130,25 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     defaultValues: {
       user_email: "",
       otp: "",
+    },
+  });
+
+  // Form for Reset Password (Step 1: Request Email)
+  const resetRequestForm = useForm<ResetPasswordInput>({
+    resolver: zodResolver(ResetPasswordSchema),
+    defaultValues: {
+      user_email: "",
+    },
+  });
+
+  // Form for Reset Password (Step 2: Confirm OTP & New Password)
+  const resetConfirmForm = useForm<ConfirmResetPasswordInput>({
+    resolver: zodResolver(ConfirmResetPasswordSchema),
+    defaultValues: {
+      user_email: "",
+      otp: "",
+      new_password: "",
+      confirm_password: "",
     },
   });
 
@@ -229,6 +276,78 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setMode("LOGIN");
   };
 
+  const handleResetRequestSubmit = async (data: ResetPasswordInput) => {
+    try {
+      await resetPasswordMutation.mutateAsync({
+        user_email: data.user_email,
+      });
+      setResetEmail(data.user_email);
+      resetConfirmForm.setValue("user_email", data.user_email);
+      resetConfirmForm.setValue("otp", "");
+      resetConfirmForm.setValue("new_password", "");
+      resetConfirmForm.setValue("confirm_password", "");
+      setResetCountdown(60);
+      setMode("RESET_CONFIRM");
+      success(
+        "Kode Reset Dikirim!",
+        `Kode verifikasi reset password telah dikirimkan ke email ${data.user_email}.`,
+      );
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Gagal meminta reset password";
+      error("Permintaan Gagal", msg);
+    }
+  };
+
+  const handleResendResetCode = async () => {
+    if (resetCountdown > 0 || resetPasswordMutation.isPending) return;
+    const targetEmail = resetEmail || resetConfirmForm.getValues("user_email");
+    if (!targetEmail) {
+      error("Email Diperlukan", "Silakan masukkan email Anda terlebih dahulu.");
+      return;
+    }
+    try {
+      await resetPasswordMutation.mutateAsync({
+        user_email: targetEmail,
+      });
+      setResetCountdown(60);
+      success(
+        "Kode Reset Baru Dikirim!",
+        `Kode verifikasi baru telah dikirimkan ke email ${targetEmail}.`,
+      );
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Gagal mengirim ulang kode reset";
+      error("Pengiriman Gagal", msg);
+    }
+  };
+
+  const handleResetConfirmSubmit = async (data: ConfirmResetPasswordInput) => {
+    try {
+      await confirmResetPasswordMutation.mutateAsync({
+        user_email: data.user_email,
+        otp: data.otp,
+        new_password: data.new_password,
+      });
+      success(
+        "Kata Sandi Berhasil Direset!",
+        "Kata sandi baru Anda telah tersimpan. Silakan masuk dengan kata sandi baru.",
+      );
+      loginForm.setValue("user_email", data.user_email);
+      loginForm.setValue("user_password", "");
+      setResetEmail("");
+      resetRequestForm.reset();
+      resetConfirmForm.reset();
+      setMode("LOGIN");
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Kode reset tidak valid atau telah kedaluwarsa";
+      error("Reset Password Gagal", msg);
+    }
+  };
+
   // If already logged in, show active user panel instead of empty login form
   if (isAuthenticated && user) {
     return (
@@ -331,38 +450,40 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
         {/* Modal Body */}
         <div className="p-6 space-y-5 overflow-y-auto">
-          {/* Top Mode Tabs: Only 2 tabs (Masuk & Daftar Baru). OTP is a direct modal flow */}
-          {mode !== "OTP" && mode !== "FORGOT" && (
-            <div className="flex border-2 border-[#1A1A24] bg-[#F1F5F9] p-1 gap-1">
-              <button
-                type="button"
-                onClick={() => setMode("LOGIN")}
-                className={`flex-1 py-1.5 font-mono text-xs font-black uppercase transition-all cursor-pointer ${
-                  mode === "LOGIN"
-                    ? "bg-[#2323FF] text-white shadow-xs"
-                    : "text-[#1A1A24] hover:bg-white"
-                }`}
-              >
-                Masuk
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode("REGISTER")}
-                className={`flex-1 py-1.5 font-mono text-xs font-black uppercase transition-all cursor-pointer ${
-                  mode === "REGISTER"
-                    ? "bg-[#2323FF] text-white shadow-xs"
-                    : "text-[#1A1A24] hover:bg-white"
-                }`}
-              >
-                Daftar Baru
-              </button>
-            </div>
-          )}
+          {/* Top Mode Tabs: Only 2 tabs (Masuk & Daftar Baru). OTP and Reset are direct modal flows */}
+          {mode !== "OTP" &&
+            mode !== "RESET_REQUEST" &&
+            mode !== "RESET_CONFIRM" && (
+              <div className="flex border-2 border-[#1A1A24] bg-[#F1F5F9] p-1 gap-1">
+                <button
+                  type="button"
+                  onClick={() => setMode("LOGIN")}
+                  className={`flex-1 py-1.5 font-mono text-xs font-black uppercase transition-all cursor-pointer ${
+                    mode === "LOGIN"
+                      ? "bg-[#2323FF] text-white shadow-xs"
+                      : "text-[#1A1A24] hover:bg-white"
+                  }`}
+                >
+                  Masuk
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode("REGISTER")}
+                  className={`flex-1 py-1.5 font-mono text-xs font-black uppercase transition-all cursor-pointer ${
+                    mode === "REGISTER"
+                      ? "bg-[#2323FF] text-white shadow-xs"
+                      : "text-[#1A1A24] hover:bg-white"
+                  }`}
+                >
+                  Daftar Baru
+                </button>
+              </div>
+            )}
 
           <div className="text-center space-y-1">
             <Badge
               variant={
-                mode === "FORGOT"
+                mode === "RESET_REQUEST" || mode === "RESET_CONFIRM"
                   ? "orange"
                   : mode === "OTP"
                     ? "neon"
@@ -375,7 +496,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   ? "PENDAFTARAN BARU"
                   : mode === "OTP"
                     ? "LANGKAH 2: VERIFIKASI EMAIL"
-                    : "SEGERA HADIR (COMING SOON)"}
+                    : mode === "RESET_REQUEST"
+                      ? "PEMULIHAN KATA SANDI (LANGKAH 1)"
+                      : "KATA SANDI BARU (LANGKAH 2)"}
             </Badge>
             <h2 className="font-mono text-lg font-black text-[#1A1A24] uppercase pt-1">
               {mode === "LOGIN"
@@ -384,7 +507,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   ? "Buat ID Pengguna Virtual"
                   : mode === "OTP"
                     ? "Masukkan Kode OTP"
-                    : "Pemulihan Kata Sandi"}
+                    : mode === "RESET_REQUEST"
+                      ? "Reset Kata Sandi"
+                      : "Buat Kata Sandi Baru"}
             </h2>
             <p className="text-xs text-[#1A1A24]/70">
               {mode === "LOGIN"
@@ -393,7 +518,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   ? "Dapatkan alamat gudang Shanghai & kode pelacakan kargo Anda."
                   : mode === "OTP"
                     ? "Satu langkah lagi untuk menyelesaikan pendaftaran dan mengaktifkan akun Anda."
-                    : "Layanan pemulihan dan reset akun otomatis sedang disiapkan."}
+                    : mode === "RESET_REQUEST"
+                      ? "Masukkan email akun Anda. Kami akan mengirimkan kode verifikasi reset password."
+                      : "Masukkan kode OTP dari email dan tentukan kata sandi baru Anda."}
             </p>
           </div>
 
@@ -441,7 +568,11 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   </label>
                   <button
                     type="button"
-                    onClick={() => setMode("FORGOT")}
+                    onClick={() => {
+                      const email = loginForm.getValues("user_email");
+                      if (email) resetRequestForm.setValue("user_email", email);
+                      setMode("RESET_REQUEST");
+                    }}
                     className="font-mono text-[11px] text-[#2323FF] hover:underline cursor-pointer font-bold"
                   >
                     Lupa Password?
@@ -779,61 +910,263 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
           )}
 
           {/* ────────────────────────────────────────────────────────── */}
-          {/* MODE: FORGOT PASSWORD (COMING SOON)                       */}
+          {/* MODE: RESET PASSWORD STEP 1 (REQUEST EMAIL)                */}
           {/* ────────────────────────────────────────────────────────── */}
-          {mode === "FORGOT" && (
-            <div className="space-y-4 animate-in fade-in">
-              <div className="p-4 bg-[#FFF8E1] border-2 border-[#1A1A24] space-y-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-[#FFDE00] border border-[#1A1A24] flex items-center justify-center font-black">
-                    <KeyRound className="w-4 h-4 text-[#1A1A24]" />
+          {mode === "RESET_REQUEST" && (
+            <form
+              onSubmit={resetRequestForm.handleSubmit(handleResetRequestSubmit)}
+              className="space-y-4 animate-in fade-in"
+            >
+              <div className="space-y-2">
+                <label
+                  htmlFor="resetEmailInput"
+                  className="block font-mono text-xs font-bold uppercase text-[#1A1A24]"
+                >
+                  Email Akun Terdaftar
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#1A1A24]/50">
+                    <Mail className="w-4 h-4 text-[#2323FF]" />
                   </div>
-                  <div>
-                    <span className="px-2 py-0.5 bg-[#FF5E1E] text-white font-mono text-[9px] font-black uppercase border border-[#1A1A24]">
-                      SEGERA HADIR • COMING SOON
-                    </span>
-                    <h4 className="font-mono text-xs font-black text-[#1A1A24] uppercase mt-0.5">
-                      Reset Password Mandiri
-                    </h4>
-                  </div>
+                  <input
+                    id="resetEmailInput"
+                    type="email"
+                    placeholder="nama@email.com"
+                    {...resetRequestForm.register("user_email")}
+                    className="w-full pl-9 pr-3 py-2.5 bg-white border-2 border-[#1A1A24] font-mono text-sm focus:outline-none focus:border-[#2323FF]"
+                  />
                 </div>
-
-                <p className="font-sans text-xs text-[#1A1A24]/80 leading-relaxed">
-                  Fitur reset password otomatis melalui tautan verifikasi email
-                  sedang dalam tahap pengembangan akhir.
-                </p>
-
-                <div className="p-3 bg-white border border-[#1A1A24] space-y-1 font-mono text-xs">
-                  <p className="font-bold text-[#1A1A24]">
-                    Butuh bantuan akses akun Anda sekarang?
+                {resetRequestForm.formState.errors.user_email && (
+                  <p className="font-mono text-[11px] text-red-600">
+                    {resetRequestForm.formState.errors.user_email.message}
                   </p>
-                  <p className="text-[11px] text-[#1A1A24]/70 font-sans">
-                    Tim Helpdesk &amp; CS FLYPICK siap membantu memulihkan akun
-                    Anda secara manual melalui WhatsApp resmi.
-                  </p>
-                </div>
+                )}
               </div>
 
-              <a
-                href={`https://wa.me/${BRANDING.contacts.whatsapp.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("Halo Admin FLYPICK, saya membutuhkan bantuan untuk reset/pemulihan password akun saya.")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#25D366] text-[#1A1A24] font-mono text-xs font-black uppercase border-2 border-[#1A1A24] shadow-[4px_4px_0px_0px_#1A1A24] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all cursor-pointer"
-              >
-                <Phone className="w-4 h-4" />
-                <span>BANTUAN VIA WHATSAPP RESMI</span>
-              </a>
+              <div className="pt-2 space-y-2">
+                <Button
+                  type="submit"
+                  variant="neon"
+                  size="lg"
+                  disabled={resetPasswordMutation.isPending}
+                  className="w-full"
+                >
+                  {resetPasswordMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      MENGIRIM KODE...
+                    </>
+                  ) : (
+                    <>
+                      <span>KIRIM KODE RESET PASSWORD</span>
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </>
+                  )}
+                </Button>
 
-              <Button
-                type="button"
-                variant="paper"
-                size="lg"
-                onClick={() => setMode("LOGIN")}
-                className="w-full"
-              >
-                KEMBALI KE FORM MASUK
-              </Button>
-            </div>
+                <Button
+                  type="button"
+                  variant="paper"
+                  size="md"
+                  onClick={() => setMode("LOGIN")}
+                  className="w-full"
+                >
+                  BATAL &amp; KEMBALI KE FORM MASUK
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {/* ────────────────────────────────────────────────────────── */}
+          {/* MODE: RESET PASSWORD STEP 2 (CONFIRM OTP & NEW PASSWORD)   */}
+          {/* ────────────────────────────────────────────────────────── */}
+          {mode === "RESET_CONFIRM" && (
+            <form
+              onSubmit={resetConfirmForm.handleSubmit(handleResetConfirmSubmit)}
+              className="space-y-4 animate-in fade-in"
+            >
+              {/* Destination Email Info Card */}
+              <div className="p-3 bg-[#EFF6FF] border border-blue-200 text-xs text-[#1E3A8A] flex items-center justify-between">
+                <span>
+                  Kode dikirim ke: <strong>{resetEmail}</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setMode("RESET_REQUEST")}
+                  className="text-[#1035D0] underline font-bold text-[11px] cursor-pointer"
+                >
+                  Ubah Email
+                </button>
+              </div>
+
+              {/* Hidden Email Form Field */}
+              <input
+                type="hidden"
+                {...resetConfirmForm.register("user_email")}
+              />
+
+              {/* Input OTP Code */}
+              <div className="space-y-2">
+                <label
+                  htmlFor="resetOtpInput"
+                  className="block font-mono text-xs font-bold uppercase text-[#1A1A24]"
+                >
+                  Kode Reset OTP
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#1A1A24]/50">
+                    <KeyRound className="w-4 h-4 text-[#2323FF]" />
+                  </div>
+                  <input
+                    id="resetOtpInput"
+                    type="text"
+                    maxLength={10}
+                    placeholder="Contoh: 123456"
+                    {...resetConfirmForm.register("otp")}
+                    className="w-full pl-9 pr-3 py-2.5 bg-white border-2 border-[#1A1A24] font-mono text-sm tracking-widest uppercase focus:outline-none focus:border-[#2323FF]"
+                  />
+                </div>
+                {resetConfirmForm.formState.errors.otp && (
+                  <p className="font-mono text-[11px] text-red-600">
+                    {resetConfirmForm.formState.errors.otp.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Input New Password */}
+              <div className="space-y-2">
+                <label
+                  htmlFor="resetNewPasswordInput"
+                  className="block font-mono text-xs font-bold uppercase text-[#1A1A24]"
+                >
+                  Kata Sandi Baru (Min. 6 Karakter)
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#1A1A24]/50">
+                    <Lock className="w-4 h-4 text-[#2323FF]" />
+                  </div>
+                  <input
+                    id="resetNewPasswordInput"
+                    type={showResetNewPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    {...resetConfirmForm.register("new_password")}
+                    className="w-full pl-9 pr-10 py-2.5 bg-white border-2 border-[#1A1A24] font-mono text-sm focus:outline-none focus:border-[#2323FF]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowResetNewPassword((prev) => !prev)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#1A1A24]/60 hover:text-[#1A1A24] cursor-pointer"
+                    aria-label={
+                      showResetNewPassword
+                        ? "Sembunyikan kata sandi baru"
+                        : "Lihat kata sandi baru"
+                    }
+                  >
+                    {showResetNewPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+                {resetConfirmForm.formState.errors.new_password && (
+                  <p className="font-mono text-[11px] text-red-600">
+                    {resetConfirmForm.formState.errors.new_password.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Input Confirm Password */}
+              <div className="space-y-2">
+                <label
+                  htmlFor="resetConfirmPasswordInput"
+                  className="block font-mono text-xs font-bold uppercase text-[#1A1A24]"
+                >
+                  Konfirmasi Kata Sandi Baru
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#1A1A24]/50">
+                    <Lock className="w-4 h-4 text-[#2323FF]" />
+                  </div>
+                  <input
+                    id="resetConfirmPasswordInput"
+                    type={showResetConfirmPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    {...resetConfirmForm.register("confirm_password")}
+                    className="w-full pl-9 pr-10 py-2.5 bg-white border-2 border-[#1A1A24] font-mono text-sm focus:outline-none focus:border-[#2323FF]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowResetConfirmPassword((prev) => !prev)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#1A1A24]/60 hover:text-[#1A1A24] cursor-pointer"
+                    aria-label={
+                      showResetConfirmPassword
+                        ? "Sembunyikan konfirmasi kata sandi"
+                        : "Lihat konfirmasi kata sandi"
+                    }
+                  >
+                    {showResetConfirmPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+                {resetConfirmForm.formState.errors.confirm_password && (
+                  <p className="font-mono text-[11px] text-red-600">
+                    {resetConfirmForm.formState.errors.confirm_password.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Resend Code Button & Countdown */}
+              <div className="flex items-center justify-between text-xs pt-1">
+                <span className="text-[#1A1A24]/60">Tidak menerima email?</span>
+                {resetCountdown > 0 ? (
+                  <span className="font-mono text-[11px] text-[#1A1A24]/60 font-bold">
+                    Kirim ulang ({resetCountdown}s)
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResendResetCode}
+                    disabled={resetPasswordMutation.isPending}
+                    className="font-mono text-xs text-[#2323FF] font-bold hover:underline cursor-pointer"
+                  >
+                    Kirim Ulang Kode
+                  </button>
+                )}
+              </div>
+
+              <div className="pt-2 space-y-2">
+                <Button
+                  type="submit"
+                  variant="neon"
+                  size="lg"
+                  disabled={confirmResetPasswordMutation.isPending}
+                  className="w-full"
+                >
+                  {confirmResetPasswordMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      MENYIMPAN PASSWORD...
+                    </>
+                  ) : (
+                    "SIMPAN KATA SANDI BARU & MASUK"
+                  )}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="paper"
+                  size="md"
+                  onClick={() => setMode("LOGIN")}
+                  className="w-full"
+                >
+                  BATAL &amp; KEMBALI KE FORM MASUK
+                </Button>
+              </div>
+            </form>
           )}
 
           <div className="pt-2 flex justify-center">
