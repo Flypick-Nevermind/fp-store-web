@@ -10,9 +10,10 @@ import {
   Send,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/providers/toast-provider";
+import { useNotificationStore } from "@/store/use-notification-store";
 import { useSubmissionStore } from "@/store/use-submission-store";
 import type { NotificationChannel, SubmissionRecord } from "@/types/submission";
 
@@ -36,6 +37,22 @@ export function AdminNotifyModal({
   const [sendViaWhatsapp, setSendViaWhatsapp] = useState(true);
   const [isCopied, setIsCopied] = useState(false);
   const [isSending, setIsSending] = useState(false);
+
+  // Sync checkboxes with user's selected preference
+  useEffect(() => {
+    if (submission) {
+      if (submission.notificationPreference === "WHATSAPP") {
+        setSendViaWhatsapp(true);
+        setSendViaEmail(false);
+      } else if (submission.notificationPreference === "EMAIL") {
+        setSendViaWhatsapp(false);
+        setSendViaEmail(true);
+      } else {
+        setSendViaWhatsapp(true);
+        setSendViaEmail(true);
+      }
+    }
+  }, [submission]);
 
   if (!isOpen || !submission) return null;
 
@@ -142,6 +159,15 @@ export function AdminNotifyModal({
       // Save notification log & update submission status to NOTIFIED
       notifyUser(submission.id, channels, messageText);
 
+      // Create in-app notification for the user
+      useNotificationStore.getState().addNotification({
+        title: `Hasil Pengecekan Link (${submission.id})`,
+        message: `Admin telah memverifikasi link Taobao/1688 Anda. Rincian stok & harga siap dikonfirmasi.`,
+        type: "ORDER",
+        badgeText: "Admin Cek",
+        linkUrl: "/profile",
+      });
+
       // If WhatsApp is selected, open WhatsApp Web/App
       if (sendViaWhatsapp) {
         window.open(waUrl, "_blank", "noopener,noreferrer");
@@ -205,10 +231,19 @@ export function AdminNotifyModal({
         <div className="p-6 overflow-y-auto space-y-5 flex-1 text-left">
           {/* Channel Selector */}
           <div className="space-y-2">
-            {/** biome-ignore lint/a11y/noLabelWithoutControl: <explanation> */}
-            <label className="font-mono text-xs font-bold uppercase text-[#0F172A]">
-              1. Pilih Saluran Notifikasi:
-            </label>
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-xs font-bold uppercase text-[#0F172A]">
+                1. Pilih Saluran Notifikasi:
+              </span>
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-50 text-[#1035D0] border border-blue-200">
+                Request User:{" "}
+                {submission.notificationPreference === "BOTH"
+                  ? "WhatsApp & Email"
+                  : submission.notificationPreference === "EMAIL"
+                    ? "Email Saja"
+                    : "WhatsApp Saja"}
+              </span>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* WhatsApp Toggle */}
               <label
@@ -279,10 +314,9 @@ export function AdminNotifyModal({
           {/* Message Preview */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              {/** biome-ignore lint/a11y/noLabelWithoutControl: <explanation> */}
-              <label className="font-mono text-xs font-bold uppercase text-[#0F172A]">
+              <span className="font-mono text-xs font-bold uppercase text-[#0F172A]">
                 2. Preview Pesan Notifikasi:
-              </label>
+              </span>
               <button
                 type="button"
                 onClick={handleCopyMessage}

@@ -20,6 +20,8 @@ export type SubmissionStatus = "PENDING_REVIEW" | "REVIEWED" | "NOTIFIED";
 
 export type NotificationChannel = "EMAIL" | "WHATSAPP";
 
+export type NotificationPreference = "WHATSAPP" | "EMAIL" | "BOTH";
+
 export interface NotificationLog {
   id: string;
   sentAt: string;
@@ -38,6 +40,7 @@ export interface SubmissionRecord {
   userPhone: string;
   userEmail?: string;
   warehouseCode?: string;
+  notificationPreference?: NotificationPreference;
   links: SubmissionItemLink[];
   status: SubmissionStatus;
   reviewedAt?: string;
@@ -52,6 +55,7 @@ export interface CreateSubmissionInput {
   userEmail?: string;
   userId?: string;
   warehouseCode?: string;
+  notificationPreference?: NotificationPreference;
   links: {
     url: string;
     userNotes?: string;

@@ -69,10 +69,33 @@ export function SubmissionConfirmationModal({
 
           <p className="text-slate-500 text-xs sm:text-sm leading-relaxed max-w-sm mx-auto">
             Tim admin FLYPICK sedang memeriksa ketersediaan stok &amp; harga.
-            Hasil cek akan kami kirimkan ke WhatsApp{" "}
-            <strong className="text-slate-800">
-              {submission.userPhone || "kamu"}
-            </strong>
+            Hasil cek akan kami kirimkan ke{" "}
+            {submission.notificationPreference === "BOTH" ? (
+              <>
+                WhatsApp{" "}
+                <strong className="text-slate-800">
+                  {submission.userPhone}
+                </strong>{" "}
+                dan Email{" "}
+                <strong className="text-slate-800">
+                  {submission.userEmail || "-"}
+                </strong>
+              </>
+            ) : submission.notificationPreference === "EMAIL" ? (
+              <>
+                Email{" "}
+                <strong className="text-slate-800">
+                  {submission.userEmail || submission.userPhone}
+                </strong>
+              </>
+            ) : (
+              <>
+                WhatsApp{" "}
+                <strong className="text-slate-800">
+                  {submission.userPhone || "kamu"}
+                </strong>
+              </>
+            )}
             .
           </p>
         </div>
@@ -88,12 +111,24 @@ export function SubmissionConfirmationModal({
                 {submission.id}
               </span>
             </div>
+            <div className="text-center">
+              <span className="text-[10px] text-slate-400 block font-mono">
+                SALURAN NOTIFIKASI
+              </span>
+              <span className="font-mono font-bold text-emerald-700 text-xs">
+                {submission.notificationPreference === "BOTH"
+                  ? "WA & Email"
+                  : submission.notificationPreference === "EMAIL"
+                    ? "Email"
+                    : "WhatsApp"}
+              </span>
+            </div>
             <div className="text-right">
               <span className="text-[10px] text-slate-400 block font-mono">
-                TOTAL PENGAJUAN
+                TOTAL ITEM
               </span>
               <span className="font-bold text-[#1035D0] text-xs">
-                {submission.links.length} Link Produk
+                {submission.links.length} Produk
               </span>
             </div>
           </div>

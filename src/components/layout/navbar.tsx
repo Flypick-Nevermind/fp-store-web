@@ -3,17 +3,16 @@
 import {
   ChevronDown,
   LogOut,
-  Search,
   ShieldCheck,
   ShoppingBag,
   Warehouse,
-  X,
 } from "lucide-react";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { BrandLogo } from "@/components/branding/brand-logo";
+import { NotificationPopover } from "@/components/layout/notification-popover";
 import { LoginModal } from "@/components/profile/login-modal";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/providers/toast-provider";
@@ -27,8 +26,6 @@ export function Navbar() {
   const [isMounted, setIsMounted] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
 
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -60,17 +57,6 @@ export function Navbar() {
 
   const itemCount = isMounted ? rawItemCount : 0;
   const isUserLoggedIn = isMounted && isAuthenticated && !!user;
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      info(
-        "Pencarian Produk",
-        `Mencari "${searchQuery}". Anda juga dapat langsung menempelkan link produk China di halaman utama.`,
-      );
-      setIsSearchOpen(false);
-    }
-  };
 
   const handleLogout = () => {
     logout();
@@ -139,17 +125,10 @@ export function Navbar() {
             </Link>
           </nav>
 
-          {/* ── Right Actions: Search, Cart, Masuk / User Profile Menu ──────── */}
+          {/* ── Right Actions: Notifikasi, Cart, Masuk / User Profile Menu ── */}
           <div className="flex items-center gap-3 sm:gap-4">
-            {/* Search Icon */}
-            <button
-              type="button"
-              onClick={() => setIsSearchOpen((prev) => !prev)}
-              className="p-2 text-[#334155] hover:text-[#1035D0] hover:bg-[#F1F5F9] rounded-full transition-colors cursor-pointer"
-              aria-label="Cari Produk"
-            >
-              <Search className="w-5 h-5" />
-            </button>
+            {/* Notification Bell with Dropdown Popover */}
+            <NotificationPopover />
 
             {/* Shopping Cart Icon with Badge */}
             <Link
@@ -266,32 +245,6 @@ export function Navbar() {
             )}
           </div>
         </div>
-
-        {/* ── Collapsible Search Bar Overlay ───────────────────── */}
-        {isSearchOpen && (
-          <div className="border-t border-[#E8E2D9] bg-white px-4 py-3 animate-in slide-in-from-top-2 duration-150">
-            <form
-              onSubmit={handleSearchSubmit}
-              className="max-w-2xl mx-auto flex items-center gap-2"
-            >
-              <Search className="w-4 h-4 text-[#94A3B8]" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari nama produk Taobao, 1688, atau kategori..."
-                className="flex-1 bg-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => setIsSearchOpen(false)}
-                className="text-[#94A3B8] hover:text-[#0F172A] p-1 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </form>
-          </div>
-        )}
       </header>
 
       {/* WhatsApp OTP / Auth Login Modal */}

@@ -203,6 +203,7 @@ export const useSubmissionStore = create<SubmissionState>()(
           userPhone: input.userPhone.trim(),
           userEmail: input.userEmail?.trim() || "",
           warehouseCode: input.warehouseCode || `FP-SH-${randCode}`,
+          notificationPreference: input.notificationPreference || "WHATSAPP",
           links: formattedLinks,
           status: "PENDING_REVIEW",
           notifications: [],
