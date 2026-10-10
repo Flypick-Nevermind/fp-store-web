@@ -128,13 +128,13 @@ export function Navbar() {
             <Link
               href="/admin"
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1 rounded-full font-mono text-xs font-bold transition-all cursor-pointer",
+                "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer",
                 pathname === "/admin"
                   ? "bg-[#1035D0] text-white shadow-xs"
-                  : "bg-amber-100/80 text-amber-900 hover:bg-amber-200 border border-amber-300",
+                  : "bg-blue-50 text-[#1035D0] hover:bg-blue-100 border border-blue-200/80",
               )}
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-amber-700" />
+              <ShieldCheck className="w-3.5 h-3.5 text-[#1035D0]" />
               <span>Admin Cek Link</span>
             </Link>
           </nav>
@@ -171,9 +171,9 @@ export function Navbar() {
                 <button
                   type="button"
                   onClick={() => setIsUserMenuOpen((prev) => !prev)}
-                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border-2 border-[#1035D0] bg-[#1035D0]/5 hover:bg-[#1035D0] text-[#1035D0] hover:text-white font-sans text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer select-none group"
+                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-slate-200 bg-white hover:border-[#1035D0] text-slate-800 hover:text-[#1035D0] font-sans text-xs sm:text-sm font-bold transition-all shadow-2xs cursor-pointer select-none group"
                 >
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse group-hover:bg-white" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   <span className="font-mono text-xs uppercase tracking-tight">
                     {user.warehouseCode}
                   </span>
@@ -187,12 +187,12 @@ export function Navbar() {
 
                 {/* Dropdown Menu for Logged In User */}
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-72 bg-white border-2 border-[#1A1A24] shadow-[6px_6px_0px_0px_#1035D0] p-4 z-50 animate-in fade-in slide-in-from-top-2">
+                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl border border-slate-200 shadow-xl p-4 z-50 animate-in fade-in slide-in-from-top-2">
                     {/* User Info Header */}
-                    <div className="border-b-2 border-[#E2E8F0] pb-3 mb-3">
+                    <div className="border-b border-slate-100 pb-3 mb-3">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="px-1.5 py-0.5 bg-[#00F0FF] text-[#1A1A24] font-mono text-[9px] font-black uppercase border border-[#1A1A24]">
-                          MEMBER AKTIF
+                        <span className="px-2 py-0.5 bg-blue-50 text-[#1035D0] font-sans text-[10px] font-bold rounded-full border border-blue-200">
+                          Member Terverifikasi
                         </span>
                       </div>
                       <p className="font-sans font-bold text-sm text-[#0F172A] truncate">
@@ -201,55 +201,55 @@ export function Navbar() {
                       <p className="font-mono text-xs text-[#64748B] truncate">
                         {user.email || user.phone}
                       </p>
-                      <div className="mt-2.5 flex items-center justify-between px-2.5 py-1.5 bg-[#FFF8E1] border-2 border-[#1A1A24] font-mono text-xs">
+                      <div className="mt-2.5 flex items-center justify-between px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200 font-mono text-xs">
                         <span className="text-[#64748B] text-[11px]">
                           ID GUDANG:
                         </span>
-                        <span className="font-black text-[#1035D0]">
+                        <span className="font-bold text-[#1035D0]">
                           {user.warehouseCode}
                         </span>
                       </div>
                     </div>
 
                     {/* Nav Links */}
-                    <div className="space-y-1 font-mono text-xs font-bold">
+                    <div className="space-y-1 font-sans text-xs font-semibold">
                       <Link
                         href="/profile"
                         onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2 text-[#1E293B] hover:bg-[#F1F5F9] hover:text-[#1035D0] border border-transparent hover:border-[#1A1A24] transition-all"
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-[#1035D0] transition-all"
                       >
                         <Warehouse className="w-4 h-4 text-[#1035D0]" />
-                        <span>KARTU GUDANG &amp; LACAK</span>
+                        <span>Lacak Pesanan &amp; Gudang</span>
                       </Link>
 
                       <Link
                         href="/cart"
                         onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2 text-[#1E293B] hover:bg-[#F1F5F9] hover:text-[#1035D0] border border-transparent hover:border-[#1A1A24] transition-all"
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 hover:text-[#1035D0] transition-all"
                       >
                         <ShoppingBag className="w-4 h-4 text-[#1035D0]" />
-                        <span>KERANJANG SAYA</span>
+                        <span>Keranjang Belanja</span>
                       </Link>
 
                       <Link
                         href="/admin"
                         onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2 text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-all"
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#1035D0] bg-blue-50/70 hover:bg-blue-100/70 border border-blue-200 transition-all font-bold"
                       >
-                        <ShieldCheck className="w-4 h-4 text-amber-700" />
-                        <span>PORTAL ADMIN (CEK LINK)</span>
+                        <ShieldCheck className="w-4 h-4 text-[#1035D0]" />
+                        <span>Dashboard Admin (Cek Link)</span>
                       </Link>
                     </div>
 
                     {/* Logout Button */}
-                    <div className="border-t-2 border-[#E2E8F0] pt-2 mt-3">
+                    <div className="border-t border-slate-100 pt-2 mt-3">
                       <button
                         type="button"
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 font-mono text-xs font-bold border border-transparent hover:border-red-300 transition-all cursor-pointer"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded-xl font-sans text-xs font-semibold transition-all cursor-pointer"
                       >
                         <LogOut className="w-4 h-4" />
-                        <span>KELUAR DARI AKUN</span>
+                        <span>Keluar dari Akun</span>
                       </button>
                     </div>
                   </div>
@@ -259,7 +259,7 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={() => setIsLoginModalOpen(true)}
-                className="px-5 py-2 rounded-full border border-[#1035D0] text-[#1035D0] hover:bg-[#1035D0] hover:text-white font-sans text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer select-none"
+                className="px-5 py-2 rounded-full bg-[#1035D0] hover:bg-[#0A2699] text-white font-sans text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer select-none"
               >
                 Masuk / Daftar
               </button>

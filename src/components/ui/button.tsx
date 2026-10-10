@@ -3,26 +3,25 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 export const buttonVariants = cva(
-  "inline-flex items-center justify-center font-mono font-bold uppercase tracking-wider text-xs transition-all active:translate-x-[1px] active:translate-y-[1px] disabled:pointer-events-none disabled:opacity-50 select-none cursor-pointer",
+  "inline-flex items-center justify-center font-sans font-bold text-xs transition-all active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 select-none cursor-pointer rounded-xl",
   {
     variants: {
       variant: {
-        neon: "bg-[#2323FF] text-[#FFF8E1] border-2 border-[#1A1A24] shadow-[3px_3px_0px_0px_#1A1A24] hover:bg-[#1a1aff] hover:shadow-[4px_4px_0px_0px_#1A1A24]",
+        neon: "bg-[#1035D0] text-white hover:bg-[#0A2699] shadow-xs hover:shadow-sm",
         electric:
-          "bg-[#00F0FF] text-[#1A1A24] border-2 border-[#1A1A24] shadow-[3px_3px_0px_0px_#1A1A24] hover:bg-[#33f3ff] hover:shadow-[4px_4px_0px_0px_#1A1A24]",
+          "bg-[#1035D0] text-white hover:bg-[#0A2699] shadow-xs hover:shadow-md",
         paper:
-          "bg-white text-[#1A1A24] border-2 border-[#1A1A24] shadow-[3px_3px_0px_0px_#1A1A24] hover:bg-[#FFF8E1] hover:border-[#2323FF]",
+          "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-2xs",
         stamp:
-          "bg-transparent text-[#2323FF] border-2 border-dashed border-[#2323FF] hover:bg-[#2323FF]/10",
-        danger:
-          "bg-red-600 text-white border-2 border-[#1A1A24] shadow-[3px_3px_0px_0px_#1A1A24] hover:bg-red-700",
+          "bg-blue-50 text-[#1035D0] border border-dashed border-[#1035D0]/60 hover:bg-blue-100/60",
+        danger: "bg-red-600 text-white hover:bg-red-700 shadow-xs",
         ghost:
-          "bg-transparent text-[#1A1A24] hover:bg-[#1A1A24]/10 border border-transparent",
+          "bg-transparent text-slate-700 hover:bg-slate-100 hover:text-slate-900 border border-transparent",
       },
       size: {
-        sm: "h-8 px-3 text-[11px]",
-        md: "h-10 px-4 text-xs",
-        lg: "h-12 px-6 text-sm",
+        sm: "h-8 px-3 text-xs",
+        md: "h-10 px-4 text-xs sm:text-sm",
+        lg: "h-12 px-6 text-sm sm:text-base",
         icon: "h-10 w-10 p-0",
       },
     },
