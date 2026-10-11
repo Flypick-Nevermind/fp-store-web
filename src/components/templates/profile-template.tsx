@@ -6,21 +6,24 @@ import {
   LogOut,
   PackageSearch,
   Plane,
+  Search,
   Warehouse,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge, Button } from "@/components/atoms";
 import {
   LoginModal,
   OrderTimeline,
   VirtualWarehouseCard,
 } from "@/components/organisms";
+import { UserProductRequestsList } from "@/components/profile/user-product-requests-list";
 import { UserSubmissionsList } from "@/components/profile/user-submissions-list";
 import { useOrderTracking } from "@/hooks/use-order-tracking";
 import { cn } from "@/lib/utils";
+import { useProductRequestStore } from "@/store/use-product-request-store";
 import { useSubmissionStore } from "@/store/use-submission-store";
 
-type ProfileTab = "SUBMISSIONS" | "MANIFEST" | "WAREHOUSE";
+type ProfileTab = "SUBMISSIONS" | "REQUESTS" | "MANIFEST" | "WAREHOUSE";
 
 export function ProfileTemplate() {
   const {
@@ -34,7 +37,17 @@ export function ProfileTemplate() {
   } = useOrderTracking();
 
   const submissions = useSubmissionStore((s) => s.submissions);
+  const requests = useProductRequestStore((s) => s.requests);
   const [activeTab, setActiveTab] = useState<ProfileTab>("SUBMISSIONS");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("tab") === "requests" || params.get("tab") === "request") {
+        setActiveTab("REQUESTS");
+      }
+    }
+  }, []);
 
   // User submissions count
   const mySubmissionsCount = submissions.filter((sub) => {
@@ -46,6 +59,21 @@ export function ProfileTemplate() {
           sub.userEmail &&
           sub.userEmail.toLowerCase() === user.email.toLowerCase()) ||
         (user.warehouseCode && sub.warehouseCode === user.warehouseCode)
+      );
+    }
+    return true;
+  }).length;
+
+  // User product requests count
+  const myRequestsCount = requests.filter((req) => {
+    if (isAuthenticated && user) {
+      return (
+        req.userId === user.id ||
+        (user.phone && req.userPhone.includes(user.phone.replace(/\D/g, ""))) ||
+        (user.email &&
+          req.userEmail &&
+          req.userEmail.toLowerCase() === user.email.toLowerCase()) ||
+        (user.warehouseCode && req.warehouseCode === user.warehouseCode)
       );
     }
     return true;
@@ -113,7 +141,7 @@ export function ProfileTemplate() {
           type="button"
           onClick={() => setActiveTab("SUBMISSIONS")}
           className={cn(
-            "flex-1 min-w-[160px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer",
+            "flex-1 min-w-[140px] py-2.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer",
             activeTab === "SUBMISSIONS"
               ? "bg-white text-[#1035D0] shadow-xs"
               : "text-slate-600 hover:text-slate-900",
@@ -137,16 +165,42 @@ export function ProfileTemplate() {
 
         <button
           type="button"
+          onClick={() => setActiveTab("REQUESTS")}
+          className={cn(
+            "flex-1 min-w-[140px] py-2.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer",
+            activeTab === "REQUESTS"
+              ? "bg-white text-[#1035D0] shadow-xs"
+              : "text-slate-600 hover:text-slate-900",
+          )}
+        >
+          <Search className="w-4 h-4" />
+          <span>Request Produk</span>
+          {myRequestsCount > 0 && (
+            <span
+              className={cn(
+                "px-2 py-0.5 rounded-full text-[10px] font-mono font-bold",
+                activeTab === "REQUESTS"
+                  ? "bg-[#1035D0] text-white"
+                  : "bg-slate-200 text-slate-700",
+              )}
+            >
+              {myRequestsCount}
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveTab("MANIFEST")}
           className={cn(
-            "flex-1 min-w-[160px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer",
+            "flex-1 min-w-[140px] py-2.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer",
             activeTab === "MANIFEST"
               ? "bg-white text-[#1035D0] shadow-xs"
               : "text-slate-600 hover:text-slate-900",
           )}
         >
           <Plane className="w-4 h-4" />
-          <span>Lacak Kargo Udara</span>
+          <span>Lacak Kargo</span>
           {orders.length > 0 && (
             <span
               className={cn(
@@ -165,14 +219,14 @@ export function ProfileTemplate() {
           type="button"
           onClick={() => setActiveTab("WAREHOUSE")}
           className={cn(
-            "flex-1 min-w-[160px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer",
+            "flex-1 min-w-[140px] py-2.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer",
             activeTab === "WAREHOUSE"
               ? "bg-white text-[#1035D0] shadow-xs"
               : "text-slate-600 hover:text-slate-900",
           )}
         >
           <Warehouse className="w-4 h-4" />
-          <span>Alamat Gudang China</span>
+          <span>Gudang China</span>
         </button>
       </div>
 
@@ -182,6 +236,13 @@ export function ProfileTemplate() {
         {activeTab === "SUBMISSIONS" && (
           <section className="space-y-4">
             <UserSubmissionsList />
+          </section>
+        )}
+
+        {/* Tab 2: Sourcing Requests */}
+        {activeTab === "REQUESTS" && (
+          <section className="space-y-4">
+            <UserProductRequestsList />
           </section>
         )}
 

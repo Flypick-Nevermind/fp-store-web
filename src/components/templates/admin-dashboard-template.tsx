@@ -1,14 +1,32 @@
 "use client";
 
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Link2, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { AdminProductRequestTable } from "@/components/admin/admin-product-request-table";
 import { AdminSubmissionTable } from "@/components/admin/admin-submission-table";
 import { MultiLinkIntakeForm } from "@/components/intake/multi-link-intake-form";
+import { ProductRequestForm } from "@/components/intake/product-request-form";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { useProductRequestStore } from "@/store/use-product-request-store";
+import { useSubmissionStore } from "@/store/use-submission-store";
 
 export function AdminDashboardTemplate() {
+  const [activeAdminTab, setActiveAdminTab] = useState<"LINKS" | "REQUESTS">(
+    "LINKS",
+  );
   const [isTestModalOpen, setIsTestModalOpen] = useState(false);
+
+  const submissions = useSubmissionStore((s) => s.submissions);
+  const requests = useProductRequestStore((s) => s.requests);
+
+  const pendingSubmissionsCount = submissions.filter(
+    (s) => s.status === "PENDING_REVIEW",
+  ).length;
+  const pendingRequestsCount = requests.filter(
+    (r) => r.status === "PENDING_SOURCING",
+  ).length;
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] py-8 px-4 sm:px-6 lg:px-8">
@@ -81,8 +99,53 @@ export function AdminDashboardTemplate() {
           </div>
         </div>
 
-        {/* ── Submissions Table & Actions ──────────────────────────── */}
-        <AdminSubmissionTable />
+        {/* ── Admin Mode Tab Switcher ─────────────────────────────── */}
+        <div className="flex items-center gap-2 p-1.5 bg-slate-200/80 rounded-2xl max-w-md">
+          <button
+            type="button"
+            onClick={() => setActiveAdminTab("LINKS")}
+            className={cn(
+              "flex-1 py-2 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2",
+              activeAdminTab === "LINKS"
+                ? "bg-white text-[#1035D0] shadow-xs"
+                : "text-slate-600 hover:text-slate-900",
+            )}
+          >
+            <Link2 className="w-4 h-4" />
+            <span>Verifikasi Link</span>
+            {pendingSubmissionsCount > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-white text-[10px] font-mono font-bold">
+                {pendingSubmissionsCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveAdminTab("REQUESTS")}
+            className={cn(
+              "flex-1 py-2 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2",
+              activeAdminTab === "REQUESTS"
+                ? "bg-white text-[#1035D0] shadow-xs"
+                : "text-slate-600 hover:text-slate-900",
+            )}
+          >
+            <Search className="w-4 h-4" />
+            <span>Request Cari Produk</span>
+            {pendingRequestsCount > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-white text-[10px] font-mono font-bold">
+                {pendingRequestsCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* ── Active Table ─────────────────────────────────────────── */}
+        {activeAdminTab === "LINKS" ? (
+          <AdminSubmissionTable />
+        ) : (
+          <AdminProductRequestTable />
+        )}
 
         {/* ── Test Submission Intake Modal (for admin/demo testing) ─── */}
         {isTestModalOpen && (
@@ -94,7 +157,7 @@ export function AdminDashboardTemplate() {
             <div className="relative w-full max-w-2xl bg-white rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-200">
                 <h3 className="font-sans font-black text-lg text-slate-900">
-                  Uji Coba: Submit Link Sebagai User
+                  Uji Coba: Submit Sebagai User
                 </h3>
                 <button
                   type="button"
@@ -105,7 +168,11 @@ export function AdminDashboardTemplate() {
                 </button>
               </div>
 
-              <MultiLinkIntakeForm />
+              {activeAdminTab === "LINKS" ? (
+                <MultiLinkIntakeForm />
+              ) : (
+                <ProductRequestForm />
+              )}
             </div>
           </div>
         )}
