@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  ArrowRight,
-  CheckCircle2,
-  ChevronDown,
-  ExternalLink,
-  ShieldCheck,
-  X,
-} from "lucide-react";
-import Link from "next/link";
+import { ArrowRight, CheckCircle2, ChevronDown, Cloud, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -100,6 +92,29 @@ export function SubmissionConfirmationModal({
           </p>
         </div>
 
+        {/* Server Sync Information Card */}
+        {submission.serverCartCreationId && (
+          <div className="bg-emerald-50/90 border border-emerald-200/90 rounded-2xl p-3 text-left space-y-1.5 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-emerald-800 font-semibold flex items-center gap-1.5">
+                <Cloud className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>Tersinkronisasi Cloud FLYPICK</span>
+              </span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-white text-emerald-800 border border-emerald-200">
+                {submission.serverStatus || "ON_PROGRESS"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-xs pt-1 border-t border-emerald-100">
+              <span className="text-slate-500 text-[11px]">
+                ID Antrian Backend:
+              </span>
+              <span className="font-mono font-bold text-[#1035D0] text-[11px] truncate max-w-[200px]">
+                {submission.serverCartCreationId}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Compact Summary Strip */}
         <div className="bg-slate-50 rounded-2xl border border-slate-200/80 p-3.5 space-y-2 text-left">
           <div className="flex items-center justify-between text-xs font-sans">
@@ -185,25 +200,13 @@ export function SubmissionConfirmationModal({
             <ArrowRight className="w-4 h-4" />
           </button>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 h-9 bg-white hover:bg-slate-50 text-slate-600 font-semibold rounded-xl border border-slate-200 text-xs transition-colors cursor-pointer"
-            >
-              Tutup
-            </button>
-
-            <Link
-              href="/admin"
-              onClick={onClose}
-              className="flex-1 h-9 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer"
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-[#1035D0]" />
-              <span>Dashboard Admin</span>
-              <ExternalLink className="w-3 h-3 text-slate-400" />
-            </Link>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full h-10 bg-white hover:bg-slate-50 text-slate-600 font-semibold rounded-xl border border-slate-200 text-xs transition-colors cursor-pointer"
+          >
+            Tutup
+          </button>
         </div>
       </div>
     </div>

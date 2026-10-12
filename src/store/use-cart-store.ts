@@ -5,10 +5,12 @@ import type { BuyForMeItem, CartItem } from "@/types";
 
 interface CartState {
   items: CartItem[];
+  dismissedItemIds: string[];
   addItem: (item: CartItem) => void;
   removeItem: (id: string) => void;
   updateQty: (id: string, qty: number) => void;
   clearCart: () => void;
+  isItemDismissed: (id: string) => boolean;
 
   // Selectors / calculation getters
   getSubtotalIdr: () => number;
@@ -17,44 +19,20 @@ interface CartState {
   getBuyForMeTotalCny: () => number;
 }
 
-const INITIAL_ITEMS: CartItem[] = [
-  {
-    id: "FP-ITEM-01",
-    serviceType: "BUY_FOR_ME",
-    sourceUrl: "https://item.taobao.com/item.htm?id=726194812301",
-    productName: "Retro Vintage Cargo Jacket Unisex Oversized",
-    priceCny: 189.0,
-    exchangeRate: BRANDING.exchangeRate.cnyToIdr,
-    priceIdr: 189.0 * BRANDING.exchangeRate.cnyToIdr,
-    selectedVariant: {
-      color: "Washed Olive Green",
-      size: "XL (Loose Fit)",
-      skuId: "SKU-7721-OLV",
-    },
-    quantity: 1,
-    notes: "Mohon dicek jahitan resleting & kancing cadangan.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&auto=format&fit=crop&q=60",
-  },
-  {
-    id: "FP-FWD-02",
-    serviceType: "FORWARDING",
-    chinaTrackingNumber: "SF148902819001",
-    itemCategory: "ELECTRONICS",
-    quantity: 2,
-    declaredValueIdr: 750000,
-    description: "Mechanical Keyboard Switches & Custom Keycap Set (2 Boxes)",
-    courierName: "SF Express (顺丰速运)",
-  },
-];
+// Legacy mock item IDs used during early prototype development
+const DUMMY_SEED_IDS = new Set(["FP-ITEM-01", "FP-FWD-02"]);
 
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
-      items: INITIAL_ITEMS,
+      items: [],
+      dismissedItemIds: [],
 
       addItem: (item) => {
         set((state) => {
+          const remainingDismissed = state.dismissedItemIds.filter(
+            (id) => id !== item.id,
+          );
           const existingIndex = state.items.findIndex((i) => i.id === item.id);
           if (existingIndex > -1) {
             const nextItems = [...state.items];
@@ -63,15 +41,21 @@ export const useCartStore = create<CartState>()(
               quantity:
                 nextItems[existingIndex].quantity + (item.quantity || 1),
             };
-            return { items: nextItems };
+            return { items: nextItems, dismissedItemIds: remainingDismissed };
           }
-          return { items: [item, ...state.items] };
+          return {
+            items: [item, ...state.items],
+            dismissedItemIds: remainingDismissed,
+          };
         });
       },
 
       removeItem: (id) => {
         set((state) => ({
           items: state.items.filter((item) => item.id !== id),
+          dismissedItemIds: state.dismissedItemIds.includes(id)
+            ? state.dismissedItemIds
+            : [...state.dismissedItemIds, id],
         }));
       },
 
@@ -88,7 +72,17 @@ export const useCartStore = create<CartState>()(
       },
 
       clearCart: () => {
-        set({ items: [] });
+        set((state) => ({
+          items: [],
+          dismissedItemIds: [
+            ...state.dismissedItemIds,
+            ...state.items.map((i) => i.id),
+          ],
+        }));
+      },
+
+      isItemDismissed: (id: string) => {
+        return get().dismissedItemIds.includes(id);
       },
 
       getSubtotalIdr: () => {
@@ -135,6 +129,37 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: "flypick-cart-storage",
+      version: 2,
+      migrate: (_persistedState: unknown, version: number) => {
+        // Reset legacy unversioned / v1 store to clean empty state
+        if (version < 2) {
+          return {
+            items: [],
+            dismissedItemIds: [],
+          };
+        }
+        return _persistedState as CartState;
+      },
+      merge: (persistedState: unknown, currentState) => {
+        const persisted = persistedState as
+          | { items?: CartItem[]; dismissedItemIds?: string[] }
+          | undefined;
+        if (!persisted) {
+          return currentState;
+        }
+        const cleanItems = Array.isArray(persisted.items)
+          ? persisted.items.filter((item) => !DUMMY_SEED_IDS.has(item.id))
+          : [];
+        const cleanDismissed = Array.isArray(persisted.dismissedItemIds)
+          ? persisted.dismissedItemIds
+          : [];
+
+        return {
+          ...currentState,
+          items: cleanItems,
+          dismissedItemIds: cleanDismissed,
+        };
+      },
     },
   ),
 );

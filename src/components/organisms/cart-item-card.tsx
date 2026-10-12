@@ -4,6 +4,7 @@ import { ExternalLink, Package, Trash2, Truck } from "lucide-react";
 import { QtyControl } from "@/components/molecules";
 import { useCartActions } from "@/hooks/use-cart-actions";
 import { formatCny, formatIdr } from "@/lib/utils";
+import { useToast } from "@/providers/toast-provider";
 import type { BuyForMeItem, CartItem, ForwardingItem } from "@/types";
 
 interface CartItemCardProps {
@@ -12,10 +13,22 @@ interface CartItemCardProps {
 
 export function CartItemCard({ item }: CartItemCardProps) {
   const { removeItem, updateQty } = useCartActions();
+  const { success } = useToast();
 
   const isBuyForMe = item.serviceType === "BUY_FOR_ME";
   const bfmItem = isBuyForMe ? (item as BuyForMeItem) : null;
   const fwdItem = !isBuyForMe ? (item as ForwardingItem) : null;
+
+  const handleDelete = () => {
+    removeItem(item.id);
+    const title = isBuyForMe
+      ? bfmItem?.productName || "Barang"
+      : fwdItem?.description || "Barang Forwarding";
+    success(
+      "Barang Dihapus",
+      `"${title.slice(0, 36)}" berhasil dikeluarkan dari keranjang belanja.`,
+    );
+  };
 
   // Detect platform name
   let platformLabel = "Taobao";
@@ -60,15 +73,29 @@ export function CartItemCard({ item }: CartItemCardProps) {
 
         {/* Info Column */}
         <div className="flex-1 min-w-0 space-y-2">
-          {/* Top badges */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-sans text-[11px] font-bold text-[#1035D0] bg-[#EFF6FF] px-2 py-0.5 rounded-full border border-[#BFDBFE]">
-              1 Link = 1 Varian
-            </span>
+          {/* Top badges & Prominent Delete Button */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-sans text-[11px] font-bold text-[#1035D0] bg-[#EFF6FF] px-2 py-0.5 rounded-full border border-[#BFDBFE]">
+                1 Link = 1 Varian
+              </span>
 
-            <span className="font-mono text-[10px] text-[#94A3B8]">
-              Ref: {item.id}
-            </span>
+              <span className="font-mono text-[10px] text-[#94A3B8]">
+                Ref: {item.id}
+              </span>
+            </div>
+
+            {/* Quick Delete Card Button */}
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-rose-600 hover:text-white hover:bg-rose-600 bg-rose-50 border border-rose-200 rounded-lg transition-all cursor-pointer shadow-2xs"
+              title="Hapus barang ini dari keranjang"
+              aria-label="Hapus kartu keranjang ini"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Hapus</span>
+            </button>
           </div>
 
           {/* Title */}
@@ -126,11 +153,11 @@ export function CartItemCard({ item }: CartItemCardProps) {
 
             <button
               type="button"
-              onClick={() => removeItem(item.id)}
-              className="text-xs font-semibold text-red-500 hover:text-red-700 flex items-center gap-1 hover:underline cursor-pointer transition-colors"
+              onClick={handleDelete}
+              className="text-xs font-semibold text-rose-500 hover:text-rose-700 flex items-center gap-1 hover:underline cursor-pointer transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span>Hapus</span>
+              <span>Hapus Link</span>
             </button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  cartCheckApi,
   cartLookupApi,
   getUserCartsApi,
   mapCartWithImagesToCartItem,
@@ -67,5 +68,33 @@ export function useUserCartsQuery(userId?: string) {
     },
     enabled: !!activeUserId,
     staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+}
+
+/**
+ * Hook to submit batch links to backend cart check API (/api/v1/cart/check)
+ */
+export function useCartCheckMutation() {
+  const user = useAuthStore((s) => s.user);
+  const token = useAuthStore((s) => s.token);
+
+  return useMutation({
+    mutationFn: async (payload: { url_links: string[]; user_id?: string }) => {
+      const activeUserId = payload.user_id || user?.id;
+
+      if (!activeUserId) {
+        throw new Error(
+          "Silakan masuk ke akun Anda terlebih dahulu untuk memproses verifikasi server.",
+        );
+      }
+
+      return cartCheckApi(
+        {
+          user_id: activeUserId,
+          url_links: payload.url_links,
+        },
+        token || undefined,
+      );
+    },
   });
 }

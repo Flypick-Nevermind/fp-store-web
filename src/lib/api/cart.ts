@@ -2,6 +2,8 @@ import { BRANDING } from "@/config/branding";
 import { apiClient } from "@/lib/api-client";
 import type { BuyForMeItem } from "@/types";
 import type {
+  CartCheckPayload,
+  CartCreationResponseData,
   CartImageItem,
   CartLookupPayload,
   CartLookupResponseData,
@@ -108,5 +110,16 @@ export async function getUserCartsApi(
 ): Promise<CartWithImagesItem[]> {
   return apiClient<CartWithImagesItem[]>(`/api/v1/carts/${userId}`, {
     method: "GET",
+  });
+}
+
+export async function cartCheckApi(
+  payload: CartCheckPayload,
+  token?: string,
+): Promise<CartCreationResponseData> {
+  return apiClient<CartCreationResponseData>("/api/v1/cart/check", {
+    method: "POST",
+    body: JSON.stringify(payload),
+    token,
   });
 }

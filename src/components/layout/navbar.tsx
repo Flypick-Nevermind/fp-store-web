@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  ChevronDown,
-  LogOut,
-  ShieldCheck,
-  ShoppingBag,
-  Warehouse,
-} from "lucide-react";
+import { ChevronDown, LogOut, ShoppingBag, Warehouse } from "lucide-react";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -110,19 +104,6 @@ export function Navbar() {
             >
               Promo
             </button>
-
-            <Link
-              href="/admin"
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer",
-                pathname === "/admin"
-                  ? "bg-[#1035D0] text-white shadow-xs"
-                  : "bg-blue-50 text-[#1035D0] hover:bg-blue-100 border border-blue-200/80",
-              )}
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-[#1035D0]" />
-              <span>Admin Cek Link</span>
-            </Link>
           </nav>
 
           {/* ── Right Actions: Notifikasi, Cart, Masuk / User Profile Menu ── */}
@@ -208,15 +189,6 @@ export function Navbar() {
                       >
                         <ShoppingBag className="w-4 h-4 text-[#1035D0]" />
                         <span>Keranjang Belanja</span>
-                      </Link>
-
-                      <Link
-                        href="/admin"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#1035D0] bg-blue-50/70 hover:bg-blue-100/70 border border-blue-200 transition-all font-bold"
-                      >
-                        <ShieldCheck className="w-4 h-4 text-[#1035D0]" />
-                        <span>Dashboard Admin (Cek Link)</span>
                       </Link>
                     </div>
 

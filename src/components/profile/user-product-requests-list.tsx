@@ -13,6 +13,7 @@ import {
   ShoppingCart,
   Sparkles,
   Tag,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -36,6 +37,9 @@ export function UserProductRequestsList() {
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const allRequests = useProductRequestStore((s) => s.requests);
+  const deleteProductRequest = useProductRequestStore(
+    (s) => s.deleteProductRequest,
+  );
   const addItem = useCartStore((s) => s.addItem);
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -116,6 +120,12 @@ export function UserProductRequestsList() {
       `Produk hasil sourcing "${sourcedItem.title.slice(0, 30)}..." telah ditambahkan ke keranjang belanja.`,
     );
     router.push("/cart");
+  };
+
+  const handleDeleteRequest = (e: React.MouseEvent, reqId: string) => {
+    e.stopPropagation();
+    deleteProductRequest(reqId);
+    info("Request Dihapus", `Permintaan produk #${reqId} telah dihapus.`);
   };
 
   const getStatusBadge = (status: ProductRequestStatus) => {
@@ -327,6 +337,17 @@ export function UserProductRequestsList() {
                           <span>Order Sekarang</span>
                         </button>
                       )}
+
+                      {/* Delete Request Card Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteRequest(e, req.id)}
+                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                        title="Hapus permintaan produk ini"
+                        aria-label="Hapus request"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 </div>

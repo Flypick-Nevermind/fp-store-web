@@ -207,6 +207,9 @@ export const useSubmissionStore = create<SubmissionState>()(
           links: formattedLinks,
           status: "PENDING_REVIEW",
           notifications: [],
+          serverCartCreationId: input.serverCartCreationId,
+          serverStatus: input.serverStatus,
+          isServerSynced: input.isServerSynced ?? !!input.serverCartCreationId,
         };
 
         set((state) => ({

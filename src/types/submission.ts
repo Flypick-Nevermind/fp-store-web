@@ -47,6 +47,9 @@ export interface SubmissionRecord {
   reviewerName?: string;
   overallAdminNotes?: string;
   notifications: NotificationLog[];
+  serverCartCreationId?: string; // ID from POST /api/v1/cart/check
+  serverStatus?: string; // e.g. "ON_PROGRESS"
+  isServerSynced?: boolean;
 }
 
 export interface CreateSubmissionInput {
@@ -56,6 +59,9 @@ export interface CreateSubmissionInput {
   userId?: string;
   warehouseCode?: string;
   notificationPreference?: NotificationPreference;
+  serverCartCreationId?: string;
+  serverStatus?: string;
+  isServerSynced?: boolean;
   links: {
     url: string;
     userNotes?: string;

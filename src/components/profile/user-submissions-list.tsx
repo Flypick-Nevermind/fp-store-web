@@ -5,11 +5,13 @@ import {
   CheckCircle2,
   ChevronDown,
   Clock,
+  Cloud,
   ExternalLink,
   MessageSquare,
   Search,
   ShoppingCart,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -29,6 +31,7 @@ export function UserSubmissionsList() {
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const allSubmissions = useSubmissionStore((s) => s.submissions);
+  const deleteSubmission = useSubmissionStore((s) => s.deleteSubmission);
   const addItem = useCartStore((s) => s.addItem);
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -123,6 +126,12 @@ export function UserSubmissionsList() {
     router.push("/cart");
   };
 
+  const handleDeleteSubmission = (e: React.MouseEvent, subId: string) => {
+    e.stopPropagation();
+    deleteSubmission(subId);
+    info("Pengajuan Dihapus", `Pengajuan ${subId} telah dihapus.`);
+  };
+
   return (
     <div className="space-y-4 text-left">
       {/* Top Filter Bar */}
@@ -215,6 +224,14 @@ export function UserSubmissionsList() {
                         <span className="font-mono font-bold text-xs sm:text-sm text-[#1035D0] group-hover:underline">
                           {sub.id}
                         </span>
+                        {sub.serverCartCreationId && (
+                          <span className="text-[10px] font-mono font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200/80 flex items-center gap-1">
+                            <Cloud className="w-3 h-3 text-sky-600" />
+                            <span>
+                              Server: {sub.serverCartCreationId.slice(0, 8)}
+                            </span>
+                          </span>
+                        )}
                         <span className="text-xs text-slate-500 font-medium">
                           • {sub.links.length} Link Produk
                         </span>
@@ -269,6 +286,17 @@ export function UserSubmissionsList() {
                         <span>Beli ({readyLinks.length})</span>
                       </button>
                     )}
+
+                    {/* Delete Card Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeleteSubmission(e, sub.id)}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                      title="Hapus kartu pengajuan ini"
+                      aria-label="Hapus pengajuan"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
 
                     <button
                       type="button"

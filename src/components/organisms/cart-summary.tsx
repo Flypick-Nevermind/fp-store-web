@@ -27,7 +27,8 @@ export function CartSummary() {
           </h3>
         </div>
         <Badge variant="electric" className="text-[10px] font-mono px-2 py-0.5">
-          {itemCount} LINK TERDAFTAR
+          {items.length} LINK{" "}
+          {itemCount > items.length ? `(${itemCount} PCS)` : "TERDAFTAR"}
         </Badge>
       </div>
 

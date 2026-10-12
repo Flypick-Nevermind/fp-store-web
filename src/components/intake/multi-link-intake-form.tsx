@@ -14,6 +14,7 @@ import {
 import { useState } from "react";
 import { SubmissionConfirmationModal } from "@/components/intake/submission-confirmation-modal";
 import { Button } from "@/components/ui/button";
+import { cartCheckApi } from "@/lib/api/cart";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/providers/toast-provider";
 import { useAuthStore } from "@/store/use-auth-store";
@@ -158,7 +159,35 @@ export function MultiLinkIntakeForm({ className }: { className?: string }) {
     setIsSubmitting(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      let serverCartCreationId: string | undefined;
+      let serverStatus: string | undefined;
+      let isServerSynced = false;
+
+      // ── Integrasi Endpoint POST /api/v1/cart/check ───────────────
+      // Jika pengguna telah login dan memiliki ID akun backend resmi
+      if (isAuthenticated && user?.id) {
+        try {
+          const token = useAuthStore.getState().token || undefined;
+          const checkRes = await cartCheckApi(
+            {
+              user_id: user.id,
+              url_links: validLinks.map((l) => l.url.trim()),
+            },
+            token,
+          );
+
+          if (checkRes?.cart_creation_id) {
+            serverCartCreationId = checkRes.cart_creation_id;
+            serverStatus = checkRes.status || "ON_PROGRESS";
+            isServerSynced = true;
+          }
+        } catch (apiErr) {
+          console.warn(
+            "Cart check API offline / fallback ke penyimpanan lokal:",
+            apiErr,
+          );
+        }
+      }
 
       const newRecord = createSubmission({
         userName: finalName,
@@ -167,6 +196,9 @@ export function MultiLinkIntakeForm({ className }: { className?: string }) {
         userId: user?.id,
         warehouseCode: user?.warehouseCode,
         notificationPreference: notificationPref,
+        serverCartCreationId,
+        serverStatus,
+        isServerSynced,
         links: validLinks.map((l) => ({
           url: l.url,
           userNotes: l.userNotes,
@@ -176,17 +208,26 @@ export function MultiLinkIntakeForm({ className }: { className?: string }) {
       // Dispatch in-app notification for the user
       useNotificationStore.getState().addNotification({
         title: `Permintaan Cek Link Terkirim (${newRecord.id})`,
-        message: `Permintaan pengecekan ${newRecord.links.length} link produk telah masuk antrian verifikasi admin. Saluran: ${
-          notificationPref === "BOTH"
-            ? "WhatsApp & Email"
-            : notificationPref === "WHATSAPP"
-              ? "WhatsApp"
-              : "Email"
-        }.`,
+        message: isServerSynced
+          ? `Terkoneksi ke server FLYPICK (ID: ${serverCartCreationId}). Pengecekan ${newRecord.links.length} link produk telah masuk antrian verifikasi admin.`
+          : `Permintaan pengecekan ${newRecord.links.length} link produk telah masuk antrian verifikasi admin. Saluran: ${
+              notificationPref === "BOTH"
+                ? "WhatsApp & Email"
+                : notificationPref === "WHATSAPP"
+                  ? "WhatsApp"
+                  : "Email"
+            }.`,
         type: "ORDER",
-        badgeText: "Antrian Cek",
+        badgeText: isServerSynced ? "Server Synced" : "Antrian Cek",
         linkUrl: "/profile",
       });
+
+      if (isServerSynced) {
+        success(
+          "Tersinkronisasi ke Server!",
+          `Berhasil terhubung ke database server FLYPICK (ID: ${serverCartCreationId}).`,
+        );
+      }
 
       // Reset
       setLinks([{ id: "row-1", url: "", userNotes: "" }]);
@@ -484,7 +525,11 @@ export function MultiLinkIntakeForm({ className }: { className?: string }) {
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  Memproses Permintaan...
+                  <span>
+                    {isAuthenticated
+                      ? "Menyinkronkan ke Server FLYPICK..."
+                      : "Memproses Permintaan..."}
+                  </span>
                 </>
               ) : (
                 <>

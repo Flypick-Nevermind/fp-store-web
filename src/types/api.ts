@@ -115,3 +115,35 @@ export interface CartLookupResponseData {
   cart_title: string;
   cart_url: string;
 }
+
+export interface CartCheckPayload {
+  user_id: string;
+  url_links: string[];
+}
+
+export interface CartCreationDetailWithCart {
+  detail_id?: string;
+  cart_id?: string;
+  detail_notes?: string;
+  is_reject?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  cart?: {
+    cart_id: string;
+    cart_price: string;
+    cart_title: string;
+    cart_url: string;
+    user_id: string;
+    created_at?: string;
+    updated_at?: string;
+  };
+}
+
+export interface CartCreationResponseData {
+  cart_creation_id: string;
+  status: string; // e.g. "ON_PROGRESS"
+  user_id: string;
+  details?: CartCreationDetailWithCart[];
+  created_at: string;
+  updated_at: string;
+}

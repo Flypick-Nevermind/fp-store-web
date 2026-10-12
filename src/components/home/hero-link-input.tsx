@@ -9,12 +9,12 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { SubmissionConfirmationModal } from "@/components/intake/submission-confirmation-modal";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/providers/toast-provider";
 import { useAuthStore } from "@/store/use-auth-store";
 import { useCartStore } from "@/store/use-cart-store";
 import { useSubmissionStore } from "@/store/use-submission-store";
-import { SubmissionConfirmationModal } from "@/components/intake/submission-confirmation-modal";
 import type { SubmissionRecord } from "@/types/submission";
 
 export interface PlatformConfig {
