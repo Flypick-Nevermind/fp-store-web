@@ -7,6 +7,9 @@ interface AuthState {
   user: UserProfile | null;
   token: string | null;
   isAuthenticated: boolean;
+  isLoginModalOpen: boolean;
+  openLoginModal: () => void;
+  closeLoginModal: () => void;
   setAuth: (token: string, user: UserProfile) => void;
   setToken: (token: string | null) => void;
   setUser: (user: UserProfile | null) => void;
@@ -35,9 +38,18 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       isAuthenticated: false,
+      isLoginModalOpen: false,
+
+      openLoginModal: () => {
+        set({ isLoginModalOpen: true });
+      },
+
+      closeLoginModal: () => {
+        set({ isLoginModalOpen: false });
+      },
 
       setAuth: (token: string, user: UserProfile) => {
-        set({ token, user, isAuthenticated: true });
+        set({ token, user, isAuthenticated: true, isLoginModalOpen: false });
       },
 
       setToken: (token: string | null) => {
@@ -58,7 +70,7 @@ export const useAuthStore = create<AuthState>()(
           addressChina: buildDefaultAddress(code, name),
           createdAt: new Date().toISOString(),
         };
-        set({ user, token: null, isAuthenticated: true });
+        set({ user, token: null, isAuthenticated: true, isLoginModalOpen: false });
       },
 
       logout: () => {
@@ -75,6 +87,11 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "flypick-auth-storage",
+      partialize: (state) => ({
+        user: state.user,
+        token: state.token,
+        isAuthenticated: state.isAuthenticated,
+      }),
     },
   ),
 );

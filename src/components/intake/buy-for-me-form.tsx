@@ -22,6 +22,7 @@ import {
   type CreateBuyForMeInput,
   CreateBuyForMeInputSchema,
 } from "@/schemas/buy-for-me";
+import { useAuthStore } from "@/store/use-auth-store";
 import { useCartStore } from "@/store/use-cart-store";
 
 const PRESET_SAMPLE_LINKS = [
@@ -40,7 +41,9 @@ const PRESET_SAMPLE_LINKS = [
 ];
 
 export function BuyForMeForm() {
-  const { success, error } = useToast();
+  const { success, error, info } = useToast();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const openLoginModal = useAuthStore((s) => s.openLoginModal);
   const addItem = useCartStore((s) => s.addItem);
   const [scrapedPreview, setScrapedPreview] = useState<{
     imageUrl?: string;
@@ -84,6 +87,15 @@ export function BuyForMeForm() {
 
   // Auto scrape handler
   const handleScrape = async () => {
+    if (!isAuthenticated) {
+      info(
+        "Wajib Masuk Terlebih Dahulu",
+        "Silakan masuk ke akun Anda terlebih dahulu untuk menempelkan dan mengekstrak link produk.",
+      );
+      openLoginModal();
+      return;
+    }
+
     if (!sourceUrl) {
       error("Harap masukkan tautan produk terlebih dahulu");
       return;
@@ -120,6 +132,15 @@ export function BuyForMeForm() {
   };
 
   const onSubmit = (values: CreateBuyForMeInput) => {
+    if (!isAuthenticated) {
+      error(
+        "Wajib Masuk Terlebih Dahulu",
+        "Silakan masuk ke akun Anda terlebih dahulu untuk menambahkan produk.",
+      );
+      openLoginModal();
+      return;
+    }
+
     const finalRate = values.exchangeRate || BRANDING.exchangeRate.cnyToIdr;
     const finalPriceIdr = Math.round((values.priceCny || 0) * finalRate);
     const newItem: BuyForMeItem = {
@@ -163,6 +184,14 @@ export function BuyForMeForm() {
             key={preset.name}
             type="button"
             onClick={() => {
+              if (!isAuthenticated) {
+                info(
+                  "Wajib Masuk Terlebih Dahulu",
+                  "Silakan masuk ke akun Anda terlebih dahulu untuk mencoba link produk.",
+                );
+                openLoginModal();
+                return;
+              }
               setValue("sourceUrl", preset.url, { shouldValidate: true });
             }}
             className="text-[11px] font-mono bg-white hover:bg-[#2323FF] hover:text-white px-2 py-0.5 border border-[#1A1A24] transition-colors"

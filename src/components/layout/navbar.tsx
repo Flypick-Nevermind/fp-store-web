@@ -18,7 +18,6 @@ export function Navbar() {
   const { info, success } = useToast();
 
   const [isMounted, setIsMounted] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -48,6 +47,9 @@ export function Navbar() {
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const logout = useAuthStore((s) => s.logout);
+  const isLoginModalOpen = useAuthStore((s) => s.isLoginModalOpen);
+  const openLoginModal = useAuthStore((s) => s.openLoginModal);
+  const closeLoginModal = useAuthStore((s) => s.closeLoginModal);
 
   const itemCount = isMounted ? rawItemCount : 0;
   const isUserLoggedIn = isMounted && isAuthenticated && !!user;
@@ -209,7 +211,7 @@ export function Navbar() {
             ) : (
               <button
                 type="button"
-                onClick={() => setIsLoginModalOpen(true)}
+                onClick={openLoginModal}
                 className="px-5 py-2 rounded-full bg-[#1035D0] hover:bg-[#0A2699] text-white font-sans text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer select-none"
               >
                 Masuk / Daftar
@@ -222,7 +224,7 @@ export function Navbar() {
       {/* WhatsApp OTP / Auth Login Modal */}
       <LoginModal
         isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
+        onClose={closeLoginModal}
       />
     </>
   );
