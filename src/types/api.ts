@@ -116,9 +116,15 @@ export interface CartLookupResponseData {
   cart_url: string;
 }
 
+export interface CartCheckItemPayload {
+  url: string;
+  notes?: string;
+  detail_notes?: string;
+}
+
 export interface CartCheckPayload {
   user_id: string;
-  url_links: string[];
+  items: CartCheckItemPayload[];
 }
 
 export interface CartCreationDetailWithCart {

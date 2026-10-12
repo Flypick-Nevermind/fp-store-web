@@ -8,7 +8,7 @@ import {
 } from "@/lib/api/cart";
 import { useAuthStore } from "@/store/use-auth-store";
 import { useCartStore } from "@/store/use-cart-store";
-import type { CartLookupPayload } from "@/types/api";
+import type { CartCheckItemPayload, CartLookupPayload } from "@/types/api";
 
 /**
  * Hook to lookup / scrape product by URL and save to backend cart
@@ -79,7 +79,11 @@ export function useCartCheckMutation() {
   const token = useAuthStore((s) => s.token);
 
   return useMutation({
-    mutationFn: async (payload: { url_links: string[]; user_id?: string }) => {
+    mutationFn: async (payload: {
+      items?: CartCheckItemPayload[];
+      url_links?: string[];
+      user_id?: string;
+    }) => {
       const activeUserId = payload.user_id || user?.id;
 
       if (!activeUserId) {
@@ -88,10 +92,15 @@ export function useCartCheckMutation() {
         );
       }
 
+      const items: CartCheckItemPayload[] =
+        payload.items && payload.items.length > 0
+          ? payload.items
+          : (payload.url_links || []).map((url) => ({ url }));
+
       return cartCheckApi(
         {
           user_id: activeUserId,
-          url_links: payload.url_links,
+          items,
         },
         token || undefined,
       );

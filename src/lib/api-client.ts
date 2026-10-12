@@ -84,11 +84,37 @@ export async function apiClient<T>(
       }
     }
 
+    const rawAny = (data as unknown as Record<string, unknown>) || {};
+    const detailMsg =
+      typeof rawAny.detail === "string"
+        ? rawAny.detail
+        : Array.isArray(rawAny.detail)
+          ? rawAny.detail
+              .map((d: unknown) => {
+                if (typeof d === "string") return d;
+                const obj = d as Record<string, unknown>;
+                return (
+                  (obj?.msg as string) ||
+                  (obj?.message as string) ||
+                  JSON.stringify(d)
+                );
+              })
+              .join("; ")
+          : undefined;
+
+    const finalMessage =
+      data?.message ||
+      detailMsg ||
+      (typeof rawAny.error === "string" ? rawAny.error : undefined) ||
+      `Terjadi kesalahan pada server (${response.status})`;
+
+    const finalErrors = data?.errors || rawAny.detail || rawAny.errors;
+
     throw new ApiError(
-      data.message || "Terjadi kesalahan pada server",
-      data.code || response.status,
-      data.errors,
-      data.request_id,
+      finalMessage,
+      data?.code || response.status,
+      finalErrors,
+      data?.request_id,
     );
   }
 

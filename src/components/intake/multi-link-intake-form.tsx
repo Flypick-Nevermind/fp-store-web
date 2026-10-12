@@ -19,6 +19,7 @@ import { useEffect, useState } from "react";
 import { SubmissionConfirmationModal } from "@/components/intake/submission-confirmation-modal";
 import { Button } from "@/components/ui/button";
 import { cartCheckApi } from "@/lib/api/cart";
+import { ApiError } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/providers/toast-provider";
 import { useAuthStore } from "@/store/use-auth-store";
@@ -33,6 +34,55 @@ interface LinkRowState {
   id: string;
   url: string;
   userNotes: string;
+}
+
+function formatApiErrorMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    let msg = err.message || `Error ${err.code}`;
+    if (err.errors) {
+      if (typeof err.errors === "string") {
+        msg = `${msg}: ${err.errors}`;
+      } else if (Array.isArray(err.errors)) {
+        const itemMessages = err.errors.map((item: unknown) => {
+          if (typeof item === "string") return item;
+          if (item && typeof item === "object") {
+            const obj = item as Record<string, unknown>;
+            if (obj.field && obj.message) {
+              return `${String(obj.field)}: ${String(obj.message)}`;
+            }
+            if (obj.msg) {
+              return obj.loc
+                ? `${(obj.loc as string[]).join(".")}: ${String(obj.msg)}`
+                : String(obj.msg);
+            }
+            return JSON.stringify(obj);
+          }
+          return String(item);
+        });
+        if (itemMessages.length > 0) {
+          msg = `${msg} (${itemMessages.join(", ")})`;
+        }
+      } else if (typeof err.errors === "object" && err.errors !== null) {
+        const entries = Object.entries(
+          err.errors as Record<string, unknown>,
+        ).map(([key, value]) => {
+          if (Array.isArray(value)) return `${key}: ${value.join(", ")}`;
+          if (typeof value === "object" && value !== null) {
+            return `${key}: ${JSON.stringify(value)}`;
+          }
+          return `${key}: ${String(value)}`;
+        });
+        if (entries.length > 0) {
+          msg = `${msg} (${entries.join("; ")})`;
+        }
+      }
+    }
+    return msg;
+  }
+  if (err instanceof Error) {
+    return err.message;
+  }
+  return "Terjadi kesalahan saat memproses data ke server.";
 }
 
 const SAMPLE_DEMO_LINKS = [
@@ -200,26 +250,22 @@ export function MultiLinkIntakeForm({ className }: { className?: string }) {
       // ── Integrasi Endpoint POST /api/v1/cart/check ───────────────
       // Jika pengguna telah login dan memiliki ID akun backend resmi
       if (isAuthenticated && user?.id) {
-        try {
-          const token = useAuthStore.getState().token || undefined;
-          const checkRes = await cartCheckApi(
-            {
-              user_id: user.id,
-              url_links: validLinks.map((l) => l.url.trim()),
-            },
-            token,
-          );
+        const token = useAuthStore.getState().token || undefined;
+        const checkRes = await cartCheckApi(
+          {
+            user_id: user.id,
+            items: validLinks.map((l) => ({
+              url: l.url.trim(),
+              notes: l.userNotes.trim() || undefined,
+            })),
+          },
+          token,
+        );
 
-          if (checkRes?.cart_creation_id) {
-            serverCartCreationId = checkRes.cart_creation_id;
-            serverStatus = checkRes.status || "ON_PROGRESS";
-            isServerSynced = true;
-          }
-        } catch (apiErr) {
-          console.warn(
-            "Cart check API offline / fallback ke penyimpanan lokal:",
-            apiErr,
-          );
+        if (checkRes?.cart_creation_id) {
+          serverCartCreationId = checkRes.cart_creation_id;
+          serverStatus = checkRes.status || "ON_PROGRESS";
+          isServerSynced = true;
         }
       }
 
@@ -273,8 +319,11 @@ export function MultiLinkIntakeForm({ className }: { className?: string }) {
 
       setConfirmationData(newRecord);
       setIsConfirmationOpen(true);
-    } catch (_err) {
-      error("Gagal Mengirim", "Terjadi kesalahan. Silakan coba lagi.");
+    } catch (err: unknown) {
+      console.error("Gagal memproses pengiriman ke server backend:", err);
+      const errorMsg = formatApiErrorMessage(err);
+      const errorCode = err instanceof ApiError ? ` (${err.code})` : "";
+      error(`Gagal Mengirim ke Server${errorCode}`, errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -313,9 +362,8 @@ export function MultiLinkIntakeForm({ className }: { className?: string }) {
               </p>
             </div>
 
-            {/* Interactive Preview Mockup Box */}
-            {/** biome-ignore lint/a11y/noStaticElementInteractions: <explanation> */}
-            {/** biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+            {/* biome-ignore lint/a11y/noStaticElementInteractions: Interactive preview box triggers login modal */}
+            {/* biome-ignore lint/a11y/useKeyWithClickEvents: Interactive preview box triggers login modal */}
             <div
               onClick={() => {
                 info(
@@ -618,7 +666,7 @@ export function MultiLinkIntakeForm({ className }: { className?: string }) {
                 (notificationPref === "WHATSAPP" ||
                   notificationPref === "BOTH") && (
                   <div className="space-y-1">
-                    {/** biome-ignore lint/a11y/noLabelWithoutControl: <explanation> */}
+                    {/* biome-ignore lint/a11y/noLabelWithoutControl: Label precedes sibling input element */}
                     <label className="text-[11px] font-bold text-slate-700 font-sans">
                       Nomor WhatsApp Anda (untuk notifikasi hasil cek):
                     </label>
@@ -637,7 +685,7 @@ export function MultiLinkIntakeForm({ className }: { className?: string }) {
                 (notificationPref === "EMAIL" ||
                   notificationPref === "BOTH") && (
                   <div className="space-y-1">
-                    {/** biome-ignore lint/a11y/noLabelWithoutControl: <explanation> */}
+                    {/* biome-ignore lint/a11y/noLabelWithoutControl: Label precedes sibling input element */}
                     <label className="text-[11px] font-bold text-slate-700 font-sans">
                       Alamat Email Anda (untuk invoice rincian):
                     </label>

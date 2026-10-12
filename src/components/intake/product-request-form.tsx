@@ -249,8 +249,12 @@ export function ProductRequestForm({ className }: { className?: string }) {
         "Permintaan Diterima",
         `Request #${newRecord.id} berhasil dibuat.`,
       );
-    } catch (_err) {
-      error("Gagal Mengirim", "Terjadi kendala saat memproses formulir.");
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Terjadi kendala saat memproses formulir.";
+      error("Gagal Mengirim", msg);
     } finally {
       setIsSubmitting(false);
     }
