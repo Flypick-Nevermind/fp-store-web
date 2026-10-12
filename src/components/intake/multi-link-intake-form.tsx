@@ -19,7 +19,7 @@ import { useEffect, useState } from "react";
 import { SubmissionConfirmationModal } from "@/components/intake/submission-confirmation-modal";
 import { Button } from "@/components/ui/button";
 import { cartCheckApi } from "@/lib/api/cart";
-import { ApiError, formatApiErrorMessage } from "@/lib/api-client";
+import { formatApiErrorMessage } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/providers/toast-provider";
 import { useAuthStore } from "@/store/use-auth-store";
@@ -273,8 +273,7 @@ export function MultiLinkIntakeForm({ className }: { className?: string }) {
     } catch (err: unknown) {
       console.error("Gagal memproses pengiriman ke server backend:", err);
       const errorMsg = formatApiErrorMessage(err);
-      const errorCode = err instanceof ApiError ? ` (${err.code})` : "";
-      error(`Gagal Mengirim ke Server${errorCode}`, errorMsg);
+      error("Gagal Mengirim ke Server", errorMsg);
     } finally {
       setIsSubmitting(false);
     }

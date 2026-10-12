@@ -69,17 +69,36 @@ export function formatErrorDetails(errors: unknown): string | null {
 
 /**
  * Universally formats any thrown error (ApiError, standard Error, or unknown) into a clean user-facing string
+ * without displaying technical status codes (such as 422, 500) to the end user.
  */
 export function formatApiErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
-    const details = formatErrorDetails(err.errors);
-    if (details && !err.message.includes(details)) {
-      return `${err.message} (${details})`;
+    let msg = err.message || "Terjadi kesalahan pada server";
+    // Strip technical status codes (e.g. "(422)", "HTTP 422:", "Error 422:", "422 -")
+    msg = msg
+      .replace(/\s*\((?:HTTP\s*)?\d{3}\)/gi, "")
+      .replace(/^(?:HTTP\s*)?\d{3}\s*[:-]?\s*/i, "")
+      .replace(/^(?:Error\s*)?\d{3}\s*[:-]?\s*/i, "")
+      .trim();
+
+    if (!msg) {
+      msg = "Terjadi kesalahan pada server";
     }
-    return err.message;
+
+    const details = formatErrorDetails(err.errors);
+    if (details && !msg.includes(details)) {
+      return `${msg} (${details})`;
+    }
+    return msg;
   }
   if (err instanceof Error) {
-    return err.message;
+    return (
+      err.message
+        .replace(/\s*\((?:HTTP\s*)?\d{3}\)/gi, "")
+        .replace(/^(?:HTTP\s*)?\d{3}\s*[:-]?\s*/i, "")
+        .replace(/^(?:Error\s*)?\d{3}\s*[:-]?\s*/i, "")
+        .trim() || err.message
+    );
   }
   return "Terjadi kendala pada server. Silakan coba lagi.";
 }
@@ -128,10 +147,7 @@ export async function apiClient<T>(
   try {
     data = await response.json();
   } catch {
-    throw new ApiError(
-      `Gagal memproses respon server (${response.status} ${response.statusText})`,
-      response.status,
-    );
+    throw new ApiError("Gagal memproses respon server", response.status);
   }
 
   if (!response.ok || !data.success) {
@@ -167,7 +183,7 @@ export async function apiClient<T>(
       data?.message ||
       detailMsg ||
       (typeof rawAny.error === "string" ? rawAny.error : undefined) ||
-      `Terjadi kesalahan pada server (${response.status})`;
+      "Terjadi kesalahan pada server";
 
     const finalErrors = data?.errors || rawAny.detail || rawAny.errors;
     const formattedDetails = formatErrorDetails(finalErrors);
