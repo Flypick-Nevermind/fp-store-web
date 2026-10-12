@@ -19,7 +19,7 @@ import { useEffect, useState } from "react";
 import { SubmissionConfirmationModal } from "@/components/intake/submission-confirmation-modal";
 import { Button } from "@/components/ui/button";
 import { cartCheckApi } from "@/lib/api/cart";
-import { ApiError } from "@/lib/api-client";
+import { ApiError, formatApiErrorMessage } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/providers/toast-provider";
 import { useAuthStore } from "@/store/use-auth-store";
@@ -34,55 +34,6 @@ interface LinkRowState {
   id: string;
   url: string;
   userNotes: string;
-}
-
-function formatApiErrorMessage(err: unknown): string {
-  if (err instanceof ApiError) {
-    let msg = err.message || `Error ${err.code}`;
-    if (err.errors) {
-      if (typeof err.errors === "string") {
-        msg = `${msg}: ${err.errors}`;
-      } else if (Array.isArray(err.errors)) {
-        const itemMessages = err.errors.map((item: unknown) => {
-          if (typeof item === "string") return item;
-          if (item && typeof item === "object") {
-            const obj = item as Record<string, unknown>;
-            if (obj.field && obj.message) {
-              return `${String(obj.field)}: ${String(obj.message)}`;
-            }
-            if (obj.msg) {
-              return obj.loc
-                ? `${(obj.loc as string[]).join(".")}: ${String(obj.msg)}`
-                : String(obj.msg);
-            }
-            return JSON.stringify(obj);
-          }
-          return String(item);
-        });
-        if (itemMessages.length > 0) {
-          msg = `${msg} (${itemMessages.join(", ")})`;
-        }
-      } else if (typeof err.errors === "object" && err.errors !== null) {
-        const entries = Object.entries(
-          err.errors as Record<string, unknown>,
-        ).map(([key, value]) => {
-          if (Array.isArray(value)) return `${key}: ${value.join(", ")}`;
-          if (typeof value === "object" && value !== null) {
-            return `${key}: ${JSON.stringify(value)}`;
-          }
-          return `${key}: ${String(value)}`;
-        });
-        if (entries.length > 0) {
-          msg = `${msg} (${entries.join("; ")})`;
-        }
-      }
-    }
-    return msg;
-  }
-  if (err instanceof Error) {
-    return err.message;
-  }
-  return "Terjadi kesalahan saat memproses data ke server.";
 }
 
 const SAMPLE_DEMO_LINKS = [

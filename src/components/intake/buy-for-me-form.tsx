@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BRANDING } from "@/config/branding";
 import { useScrapeProductMutation } from "@/hooks/use-scrape-product";
+import { formatApiErrorMessage } from "@/lib/api-client";
 import { formatIdr, generateId } from "@/lib/utils";
 import { useToast } from "@/providers/toast-provider";
 import {
@@ -125,8 +126,7 @@ export function BuyForMeForm() {
         `${data.productName} (${data.sourceDomain})`,
       );
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : "Gagal menarik data produk";
+      const msg = formatApiErrorMessage(err);
       error("Gagal Ekstraksi", msg);
     }
   };

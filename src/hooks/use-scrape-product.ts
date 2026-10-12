@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { cartLookupApi, extractCartImageUrl, parsePrice } from "@/lib/api/cart";
+import { ApiError } from "@/lib/api-client";
 import { chinaMarketplaceUrlRegex } from "@/schemas/buy-for-me";
 import { useAuthStore } from "@/store/use-auth-store";
 
@@ -143,8 +144,12 @@ export function useScrapeProductMutation() {
             rating: "4.9 ★",
             originalUrl: url,
           };
-        } catch {
-          // Gracefully fallback to scraper simulator if offline or error
+        } catch (err: unknown) {
+          // If the backend actively rejected with an ApiError (e.g. 422/400), surface that error!
+          if (err instanceof ApiError) {
+            throw err;
+          }
+          // Gracefully fallback to scraper simulator if offline / network error
         }
       }
       return simulateProductScrape(url);

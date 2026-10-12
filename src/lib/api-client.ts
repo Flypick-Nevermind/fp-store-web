@@ -23,6 +23,67 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Extracts and formats human-readable details from backend error objects/arrays
+ */
+export function formatErrorDetails(errors: unknown): string | null {
+  if (!errors) return null;
+  if (typeof errors === "string") return errors;
+
+  if (Array.isArray(errors)) {
+    const list = errors
+      .map((item: unknown) => {
+        if (typeof item === "string") return item;
+        if (item && typeof item === "object") {
+          const rec = item as Record<string, unknown>;
+          if (rec.field && rec.message) {
+            return `${String(rec.field)}: ${String(rec.message)}`;
+          }
+          if (rec.msg) {
+            const loc = Array.isArray(rec.loc) ? rec.loc.join(".") : "";
+            return loc ? `${loc}: ${String(rec.msg)}` : String(rec.msg);
+          }
+          return JSON.stringify(rec);
+        }
+        return String(item);
+      })
+      .filter(Boolean);
+    return list.length > 0 ? list.join("; ") : null;
+  }
+
+  if (typeof errors === "object") {
+    const entries = Object.entries(errors as Record<string, unknown>)
+      .map(([key, val]) => {
+        if (Array.isArray(val)) return `${key}: ${val.join(", ")}`;
+        if (val && typeof val === "object") {
+          return `${key}: ${JSON.stringify(val)}`;
+        }
+        return `${key}: ${String(val)}`;
+      })
+      .filter(Boolean);
+    return entries.length > 0 ? entries.join("; ") : null;
+  }
+
+  return String(errors);
+}
+
+/**
+ * Universally formats any thrown error (ApiError, standard Error, or unknown) into a clean user-facing string
+ */
+export function formatApiErrorMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    const details = formatErrorDetails(err.errors);
+    if (details && !err.message.includes(details)) {
+      return `${err.message} (${details})`;
+    }
+    return err.message;
+  }
+  if (err instanceof Error) {
+    return err.message;
+  }
+  return "Terjadi kendala pada server. Silakan coba lagi.";
+}
+
 interface RequestOptions extends RequestInit {
   token?: string;
 }
@@ -102,16 +163,22 @@ export async function apiClient<T>(
               .join("; ")
           : undefined;
 
-    const finalMessage =
+    const baseMessage =
       data?.message ||
       detailMsg ||
       (typeof rawAny.error === "string" ? rawAny.error : undefined) ||
       `Terjadi kesalahan pada server (${response.status})`;
 
     const finalErrors = data?.errors || rawAny.detail || rawAny.errors;
+    const formattedDetails = formatErrorDetails(finalErrors);
+
+    const fullMessage =
+      formattedDetails && !baseMessage.includes(formattedDetails)
+        ? `${baseMessage}: ${formattedDetails}`
+        : baseMessage;
 
     throw new ApiError(
-      finalMessage,
+      fullMessage,
       data?.code || response.status,
       finalErrors,
       data?.request_id,

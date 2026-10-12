@@ -31,6 +31,7 @@ import {
   useResetPasswordMutation,
   useVerifyOtpMutation,
 } from "@/hooks/use-auth-mutations";
+import { formatApiErrorMessage } from "@/lib/api-client";
 import { useToast } from "@/providers/toast-provider";
 import {
   type ConfirmResetPasswordInput,
@@ -167,7 +168,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       loginForm.reset();
       onClose();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Gagal masuk";
+      const msg = formatApiErrorMessage(err);
       error("Autentikasi Gagal", msg);
     }
   };
@@ -194,7 +195,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         "Silakan masukkan 6-digit kode OTP yang telah dikirimkan ke email Anda.",
       );
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Pendaftaran gagal";
+      const msg = formatApiErrorMessage(err);
       error("Registrasi Gagal", msg);
     }
   };
@@ -236,7 +237,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       setTempPassword("");
       setMode("LOGIN");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Kode OTP tidak valid";
+      const msg = formatApiErrorMessage(err);
       error("Verifikasi Gagal", msg);
     }
   };
@@ -264,8 +265,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         }`,
       );
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : "Gagal mengirim ulang kode OTP";
+      const msg = formatApiErrorMessage(err);
       error("Pengiriman Gagal", msg);
     }
   };
@@ -293,8 +293,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         `Kode verifikasi reset password telah dikirimkan ke email ${data.user_email}.`,
       );
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : "Gagal meminta reset password";
+      const msg = formatApiErrorMessage(err);
       error("Permintaan Gagal", msg);
     }
   };
@@ -316,8 +315,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         `Kode verifikasi baru telah dikirimkan ke email ${targetEmail}.`,
       );
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : "Gagal mengirim ulang kode reset";
+      const msg = formatApiErrorMessage(err);
       error("Pengiriman Gagal", msg);
     }
   };
@@ -340,10 +338,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       resetConfirmForm.reset();
       setMode("LOGIN");
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error
-          ? err.message
-          : "Kode reset tidak valid atau telah kedaluwarsa";
+      const msg = formatApiErrorMessage(err);
       error("Reset Password Gagal", msg);
     }
   };
