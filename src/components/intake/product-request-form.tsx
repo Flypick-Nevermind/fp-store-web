@@ -170,7 +170,12 @@ export function ProductRequestForm({ className }: { className?: string }) {
       return;
     }
 
-    const finalName = (user?.name || guestName || "Member FLYPICK").trim();
+    const finalName = (
+      user?.username ||
+      user?.name ||
+      guestName ||
+      "Member FLYPICK"
+    ).trim();
     const finalPhone = (user?.phone || guestPhone).trim();
     const finalEmail = (user?.email || guestEmail).trim();
 
@@ -694,7 +699,7 @@ export function ProductRequestForm({ className }: { className?: string }) {
                     Mengirim Sebagai Akun Terdaftar
                   </span>
                   <p className="font-bold text-slate-800">
-                    {user?.name}{" "}
+                    @{user?.username || user?.name}{" "}
                     <span className="text-slate-500 font-normal">
                       (
                       {user?.phone ||

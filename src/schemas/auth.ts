@@ -28,14 +28,35 @@ export type AuthInput = z.infer<typeof AuthSchema>;
 
 // Backend API schemas
 export const LoginSchema = z.object({
-  user_email: z.string().email("Format email tidak valid"),
+  user_email: z
+    .string()
+    .min(3, "Masukkan email atau username minimal 3 karakter")
+    .refine(
+      (val) => {
+        if (val.includes("@")) {
+          return z.string().email().safeParse(val).success;
+        }
+        return /^[a-zA-Z0-9_.-]+$/.test(val);
+      },
+      {
+        message:
+          "Format tidak valid. Masukkan email yang benar atau username (huruf, angka, _, -)",
+      },
+    ),
   user_password: z.string().min(6, "Password minimal 6 karakter"),
 });
 
 export type LoginInput = z.infer<typeof LoginSchema>;
 
 export const RegisterSchema = z.object({
-  user_name: z.string().min(2, "Nama minimal 2 karakter"),
+  user_name: z
+    .string()
+    .min(3, "Username minimal 3 karakter")
+    .max(30, "Username maksimal 30 karakter")
+    .regex(
+      /^[a-zA-Z0-9_.-]+$/,
+      "Username hanya boleh huruf, angka, underscore (_), atau strip (-)",
+    ),
   user_email: z.string().email("Format email tidak valid"),
   user_password: z.string().min(6, "Password minimal 6 karakter"),
   user_phone: z

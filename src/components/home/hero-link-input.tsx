@@ -142,7 +142,7 @@ export function HeroLinkInput({ className }: HeroLinkInputProps) {
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       const newRecord = createSubmission({
-        userName: user?.name || "Tamu FLYPICK",
+        userName: user?.username || user?.name || "Tamu FLYPICK",
         userPhone: user?.phone || "081288992211",
         userEmail: user?.email,
         userId: user?.id,

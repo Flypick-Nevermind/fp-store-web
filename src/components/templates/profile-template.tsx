@@ -105,9 +105,14 @@ export function ProfileTemplate() {
                 <span className="text-[10px] text-slate-400 block uppercase font-mono font-bold">
                   Akun Aktif
                 </span>
-                <span className="text-xs font-bold text-slate-800">
-                  {user.name}
+                <span className="text-xs font-bold text-slate-800 block">
+                  @{user.username || user.name}
                 </span>
+                {user.email && (
+                  <span className="text-[11px] font-mono text-slate-500 block truncate max-w-[180px]">
+                    {user.email}
+                  </span>
+                )}
               </div>
               <Button
                 type="button"

@@ -26,6 +26,7 @@ export interface ChinaWarehouseAddress {
 export interface UserProfile {
   id: string;
   name: string;
+  username?: string;
   phone: string;
   email?: string;
   warehouseCode: string; // e.g. 'FP-8821'

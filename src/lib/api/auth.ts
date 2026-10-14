@@ -60,6 +60,7 @@ export function mapApiUserToProfile(apiUser: ApiUserData): UserProfile {
   return {
     id: apiUser.user_id,
     name: apiUser.user_name,
+    username: apiUser.user_name,
     phone: apiUser.user_phone,
     email: apiUser.user_email,
     warehouseCode,

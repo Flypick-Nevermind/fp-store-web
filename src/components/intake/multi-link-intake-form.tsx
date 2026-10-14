@@ -161,7 +161,12 @@ export function MultiLinkIntakeForm({ className }: { className?: string }) {
       return;
     }
 
-    const finalName = (user?.name || guestName || "Member FLYPICK").trim();
+    const finalName = (
+      user?.username ||
+      user?.name ||
+      guestName ||
+      "Member FLYPICK"
+    ).trim();
     const finalPhone = (user?.phone || guestPhone).trim();
     const finalEmail = (user?.email || guestEmail).trim();
 
@@ -589,7 +594,7 @@ export function MultiLinkIntakeForm({ className }: { className?: string }) {
                     AKUN PENERIMA NOTIFIKASI:
                   </span>
                   <span className="font-bold text-slate-800">
-                    {user?.name}{" "}
+                    @{user?.username || user?.name}{" "}
                     <span className="text-[#1035D0]">
                       ({user?.warehouseCode})
                     </span>

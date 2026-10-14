@@ -59,10 +59,13 @@ export function AddressStep({ onNext }: AddressStepProps) {
           <input
             id="recipientNameInput"
             type="text"
-            placeholder="Contoh: Ahmad Fikri"
+            placeholder="Nama lengkap sesuai KTP (untuk pengiriman)"
             {...register("recipientName")}
             className="w-full px-3 py-2 bg-white border-2 border-[#1A1A24] font-sans text-xs focus:outline-none focus:border-[#2323FF]"
           />
+          <p className="text-[10px] text-slate-500 font-sans">
+            Wajib diisi dengan nama lengkap penerima untuk keperluan pengiriman ekspedisi kargo.
+          </p>
           {errors.recipientName && (
             <p className="font-mono text-[11px] text-red-600">
               {errors.recipientName.message}

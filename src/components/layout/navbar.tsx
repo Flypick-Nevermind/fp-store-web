@@ -158,7 +158,7 @@ export function Navbar() {
                         </span>
                       </div>
                       <p className="font-sans font-bold text-sm text-[#0F172A] truncate">
-                        {user.name}
+                        @{user.username || user.name}
                       </p>
                       <p className="font-mono text-xs text-[#64748B] truncate">
                         {user.email || user.phone}

@@ -105,6 +105,15 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     return () => clearInterval(timer);
   }, [mode, resetCountdown]);
 
+  // Reset mode back to LOGIN whenever modal is closed
+  useEffect(() => {
+    if (!isOpen) {
+      setMode("LOGIN");
+      setTempPassword("");
+      setActiveEmail("");
+    }
+  }, [isOpen]);
+
   // Form for Login
   const loginForm = useForm<LoginInput>({
     resolver: zodResolver(LoginSchema),
@@ -161,9 +170,10 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         user_email: data.user_email,
         user_password: data.user_password,
       });
+      const displayName = res.user.username || res.user.name;
       success(
         "Login Berhasil!",
-        `Selamat datang kembali, ${res.user.name}. Sesi aktif 24 jam.`,
+        `Selamat datang kembali, @${displayName}. Sesi aktif 24 jam.`,
       );
       loginForm.reset();
       onClose();
@@ -214,14 +224,17 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             user_email: data.user_email,
             user_password: tempPassword,
           });
+          const displayName = res.user.username || res.user.name;
           success(
             "Akun Berhasil Aktif!",
-            `Selamat datang, ${res.user.name}. Sesi Anda telah aktif.`,
+            `Selamat datang, @${displayName}. Sesi Anda telah aktif.`,
           );
           loginForm.reset();
           registerForm.reset();
           otpForm.reset();
           setTempPassword("");
+          setActiveEmail("");
+          setMode("LOGIN");
           onClose();
           return;
         } catch {
@@ -235,6 +248,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       );
       loginForm.setValue("user_email", data.user_email);
       setTempPassword("");
+      setActiveEmail("");
       setMode("LOGIN");
     } catch (err: unknown) {
       const msg = formatApiErrorMessage(err);
@@ -371,12 +385,14 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                 SESI LOGIN ANDA SEDANG AKTIF
               </div>
-              <h2 className="font-mono text-xl font-black text-[#1A1A24] uppercase pt-1">
-                {user.name}
+              <h2 className="font-mono text-xl font-black text-[#1A1A24] pt-1">
+                @{user.username || user.name}
               </h2>
-              <p className="font-mono text-xs text-[#64748B]">
-                {user.email || user.phone}
-              </p>
+              {user.email && (
+                <p className="font-mono text-xs text-[#64748B]">
+                  {user.email}
+                </p>
+              )}
             </div>
 
             {/* Warehouse ID Ticket Box */}
@@ -532,16 +548,16 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   htmlFor="loginEmailInput"
                   className="block font-mono text-xs font-bold uppercase text-[#1A1A24]"
                 >
-                  Email Terdaftar
+                  Email atau Username
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#1A1A24]/50">
-                    <Mail className="w-4 h-4 text-[#2323FF]" />
+                    <User className="w-4 h-4 text-[#2323FF]" />
                   </div>
                   <input
                     id="loginEmailInput"
-                    type="email"
-                    placeholder="nama@email.com"
+                    type="text"
+                    placeholder="nama@email.com atau username"
                     {...loginForm.register("user_email")}
                     className="w-full pl-9 pr-3 py-2.5 bg-white border-2 border-[#1A1A24] font-mono text-sm focus:outline-none focus:border-[#2323FF]"
                   />
@@ -564,8 +580,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   <button
                     type="button"
                     onClick={() => {
-                      const email = loginForm.getValues("user_email");
-                      if (email) resetRequestForm.setValue("user_email", email);
+                      const val = loginForm.getValues("user_email");
+                      if (val && val.includes("@")) resetRequestForm.setValue("user_email", val);
                       setMode("RESET_REQUEST");
                     }}
                     className="font-mono text-[11px] text-[#2323FF] hover:underline cursor-pointer font-bold"
@@ -653,7 +669,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   htmlFor="registerNameInput"
                   className="block font-mono text-[11px] font-bold uppercase text-[#1A1A24]"
                 >
-                  Nama Lengkap
+                  Username
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#1A1A24]/50">
@@ -662,7 +678,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   <input
                     id="registerNameInput"
                     type="text"
-                    placeholder="Nama sesuai KTP"
+                    placeholder="Contoh: ahmadfikri (huruf/angka/_)"
                     {...registerForm.register("user_name")}
                     className="w-full pl-9 pr-3 py-2 bg-white border-2 border-[#1A1A24] font-mono text-xs focus:outline-none focus:border-[#2323FF]"
                   />
