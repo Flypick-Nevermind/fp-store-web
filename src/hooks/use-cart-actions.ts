@@ -14,6 +14,8 @@ export function useCartActions() {
   const getItemCount = useCartStore((s) => s.getItemCount());
   const getBuyForMeTotalCny = useCartStore((s) => s.getBuyForMeTotalCny);
 
+  const updatePackagingOption = useCartStore((s) => s.updatePackagingOption);
+
   const buyForMeItems = items.filter((i) => i.serviceType === "BUY_FOR_ME");
   const forwardingItems = items.filter((i) => i.serviceType === "FORWARDING");
 
@@ -34,6 +36,7 @@ export function useCartActions() {
     addItem,
     removeItem,
     updateQty,
+    updatePackagingOption,
     clearCart,
   };
 }

@@ -58,6 +58,23 @@ export function CartSummary() {
             </span>
           </div>
 
+          {/* Packaging option summary */}
+          <div className="pt-2 border-t border-[#F1F5F9] flex items-center justify-between text-[11px]">
+            <span className="text-[#64748B] flex items-center gap-1">
+              <span>Kemasan:</span>
+            </span>
+            <div className="flex items-center gap-1.5 font-bold">
+              <span className="text-[#1035D0] bg-[#EFF6FF] px-2 py-0.5 rounded border border-[#BFDBFE]">
+                {items.filter((i) => (i.packagingOption || "WITH_BOX") === "WITH_BOX").length} With Box
+              </span>
+              {items.filter((i) => i.packagingOption === "NO_BOX").length > 0 && (
+                <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  {items.filter((i) => i.packagingOption === "NO_BOX").length} No Box
+                </span>
+              )}
+            </div>
+          </div>
+
           {/* Subtotal Stage 1 */}
           <div className="pt-3 border-t border-dashed border-[#CBD5E1] flex items-baseline justify-between">
             <div>

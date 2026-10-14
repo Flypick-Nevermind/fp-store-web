@@ -10,6 +10,38 @@ import type {
   CartWithImagesItem,
 } from "@/types/api";
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  "https://service-flypick-production.up.railway.app";
+
+/**
+ * Resolve an image value into a fully qualified image URL.
+ * Supports absolute URLs, base64 data URIs, and backend S3 Wasabi object keys via /api/v1/images/media/{key}.
+ */
+export function resolveCartImageUrl(image?: string): string {
+  if (!image) {
+    return "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80";
+  }
+
+  // Already an absolute URL or data URI
+  if (/^(?:https?:\/\/|data:image\/)/i.test(image)) {
+    return image;
+  }
+
+  // Strip leading slashes
+  const cleanKey = image.replace(/^\/+/, "");
+
+  if (cleanKey.startsWith("api/v1/images/media/")) {
+    return `${API_BASE_URL}/${cleanKey}`;
+  }
+
+  if (cleanKey.startsWith("images/media/")) {
+    return `${API_BASE_URL}/api/v1/${cleanKey}`;
+  }
+
+  return `${API_BASE_URL}/api/v1/images/media/${encodeURIComponent(cleanKey)}`;
+}
+
 export function extractCartImageUrl(
   images?: (CartImageItem | string)[],
 ): string {
@@ -17,11 +49,13 @@ export function extractCartImageUrl(
     return "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80";
   }
   const first = images[0];
-  if (typeof first === "string") return first;
-  if (first && typeof first === "object" && first.cart_image_value) {
-    return first.cart_image_value;
+  let raw = "";
+  if (typeof first === "string") {
+    raw = first;
+  } else if (first && typeof first === "object") {
+    raw = first.cart_image_value || "";
   }
-  return "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80";
+  return resolveCartImageUrl(raw);
 }
 
 export function parsePrice(priceString?: string): {

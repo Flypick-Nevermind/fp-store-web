@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PackagingOptionEnum } from "./buy-for-me";
 
 export const ForwardingCategoryEnum = z.enum([
   "FASHION",
@@ -27,6 +28,7 @@ export const ForwardingItemSchema = z.object({
   declaredValueIdr: z.number().min(0, "Nilai deklarasi minimal Rp 0"),
   description: z.string().min(3, "Deskripsi isi paket minimal 3 karakter"),
   courierName: z.string().optional(),
+  packagingOption: PackagingOptionEnum.optional(),
 });
 
 export const CreateForwardingInputSchema = ForwardingItemSchema.omit({

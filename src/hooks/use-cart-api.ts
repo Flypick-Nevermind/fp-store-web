@@ -64,10 +64,11 @@ export function useUserCartsQuery(userId?: string) {
     queryFn: async () => {
       if (!activeUserId) return [];
       const apiCarts = await getUserCartsApi(activeUserId);
-      return apiCarts.map(mapCartWithImagesToCartItem);
+      return apiCarts;
     },
     enabled: !!activeUserId,
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    staleTime: 1000 * 30, // 30 seconds
+    refetchOnWindowFocus: true,
   });
 }
 

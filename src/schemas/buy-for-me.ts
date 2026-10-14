@@ -10,6 +10,8 @@ export const VariantSchema = z.object({
   skuId: z.string().optional(),
 });
 
+export const PackagingOptionEnum = z.enum(["WITH_BOX", "NO_BOX"]);
+
 export const BuyForMeItemSchema = z.object({
   id: z.string().min(1, "ID item diperlukan"),
   serviceType: z.literal("BUY_FOR_ME"),
@@ -26,6 +28,7 @@ export const BuyForMeItemSchema = z.object({
   priceIdr: z.number().nonnegative(),
   selectedVariant: VariantSchema,
   quantity: z.number().int().min(1, "Jumlah pesanan minimal 1"),
+  packagingOption: PackagingOptionEnum.optional(),
   notes: z.string().optional(),
   imageUrl: z.string().url().optional().or(z.literal("")),
 });
@@ -44,10 +47,12 @@ export const CreateBuyForMeInputSchema = z.object({
   exchangeRate: z.number(),
   selectedVariant: VariantSchema,
   quantity: z.number().int().min(1, "Jumlah pesanan minimal 1"),
+  packagingOption: PackagingOptionEnum.optional(),
   notes: z.string().optional(),
   imageUrl: z.string().url().optional().or(z.literal("")),
 });
 
 export type Variant = z.infer<typeof VariantSchema>;
+export type PackagingOption = z.infer<typeof PackagingOptionEnum>;
 export type BuyForMeItem = z.infer<typeof BuyForMeItemSchema>;
 export type CreateBuyForMeInput = z.infer<typeof CreateBuyForMeInputSchema>;

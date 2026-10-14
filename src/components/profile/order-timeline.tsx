@@ -261,9 +261,20 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
                                   ? item.productName
                                   : item.description}
                               </p>
-                              <span className="text-[10px] text-[#1A1A24]/60">
-                                {item.serviceType} x {item.quantity} pcs
-                              </span>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-[10px] text-[#1A1A24]/60">
+                                  {item.serviceType} x {item.quantity} pcs
+                                </span>
+                                {item.packagingOption === "NO_BOX" ? (
+                                  <span className="text-[9px] px-1.5 py-0.2 bg-emerald-100 text-emerald-800 border border-emerald-400 font-bold">
+                                    NO BOX
+                                  </span>
+                                ) : (
+                                  <span className="text-[9px] px-1.5 py-0.2 bg-blue-100 text-blue-800 border border-blue-300">
+                                    WITH BOX
+                                  </span>
+                                )}
+                              </div>
                             </div>
                             <span className="font-bold text-[#2323FF]">
                               {item.serviceType === "BUY_FOR_ME"

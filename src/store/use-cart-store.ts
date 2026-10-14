@@ -9,6 +9,10 @@ interface CartState {
   addItem: (item: CartItem) => void;
   removeItem: (id: string) => void;
   updateQty: (id: string, qty: number) => void;
+  updatePackagingOption: (
+    id: string,
+    packagingOption: "WITH_BOX" | "NO_BOX",
+  ) => void;
   clearCart: () => void;
   isItemDismissed: (id: string) => boolean;
 
@@ -67,6 +71,14 @@ export const useCartStore = create<CartState>()(
         set((state) => ({
           items: state.items.map((item) =>
             item.id === id ? { ...item, quantity: qty } : item,
+          ),
+        }));
+      },
+
+      updatePackagingOption: (id, packagingOption) => {
+        set((state) => ({
+          items: state.items.map((item) =>
+            item.id === id ? { ...item, packagingOption } : item,
           ),
         }));
       },

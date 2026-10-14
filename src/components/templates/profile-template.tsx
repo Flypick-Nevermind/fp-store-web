@@ -18,10 +18,10 @@ import {
 } from "@/components/organisms";
 import { UserProductRequestsList } from "@/components/profile/user-product-requests-list";
 import { UserSubmissionsList } from "@/components/profile/user-submissions-list";
+import { useUserCartsQuery } from "@/hooks/use-cart-api";
 import { useOrderTracking } from "@/hooks/use-order-tracking";
 import { cn } from "@/lib/utils";
 import { useProductRequestStore } from "@/store/use-product-request-store";
-import { useSubmissionStore } from "@/store/use-submission-store";
 
 type ProfileTab = "SUBMISSIONS" | "REQUESTS" | "MANIFEST" | "WAREHOUSE";
 
@@ -36,7 +36,7 @@ export function ProfileTemplate() {
     closeLoginModal,
   } = useOrderTracking();
 
-  const submissions = useSubmissionStore((s) => s.submissions);
+  const { data: serverCarts } = useUserCartsQuery(user?.id);
   const requests = useProductRequestStore((s) => s.requests);
   const [activeTab, setActiveTab] = useState<ProfileTab>("SUBMISSIONS");
 
@@ -49,20 +49,9 @@ export function ProfileTemplate() {
     }
   }, []);
 
-  // User submissions count
-  const mySubmissionsCount = submissions.filter((sub) => {
-    if (isAuthenticated && user) {
-      return (
-        sub.userId === user.id ||
-        (user.phone && sub.userPhone.includes(user.phone.replace(/\D/g, ""))) ||
-        (user.email &&
-          sub.userEmail &&
-          sub.userEmail.toLowerCase() === user.email.toLowerCase()) ||
-        (user.warehouseCode && sub.warehouseCode === user.warehouseCode)
-      );
-    }
-    return true;
-  }).length;
+  // User backend carts count
+  const mySubmissionsCount =
+    isAuthenticated && user ? (serverCarts?.length ?? 0) : 0;
 
   // User product requests count
   const myRequestsCount = requests.filter((req) => {

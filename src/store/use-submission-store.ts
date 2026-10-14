@@ -3,6 +3,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { BRANDING } from "@/config/branding";
+import { extractCartImageUrl, parsePrice } from "@/lib/api/cart";
+import type { CartWithImagesItem } from "@/types/api";
 import type {
   CreateSubmissionInput,
   NotificationChannel,
@@ -29,117 +31,13 @@ function extractDomain(url: string): string {
   }
 }
 
-const SEED_SUBMISSIONS: SubmissionRecord[] = [
-  {
-    id: "SUB-202610-8912",
-    createdAt: "2026-10-09T08:15:00.000Z",
-    updatedAt: "2026-10-09T08:15:00.000Z",
-    userName: "Budi Santoso",
-    userPhone: "081288992211",
-    userEmail: "budi.santoso@gmail.com",
-    warehouseCode: "FP-SH-8821",
-    status: "PENDING_REVIEW",
-    links: [
-      {
-        id: "LINK-8912-1",
-        url: "https://item.taobao.com/item.htm?id=726194812301",
-        domain: "Taobao",
-        userNotes: "Mau warna Hitam Washed, Ukuran XL (Loose Fit), Qty 1 pcs",
-        status: "PENDING",
-        isChecked: false,
-      },
-      {
-        id: "LINK-8912-2",
-        url: "https://detail.tmall.com/item.htm?id=691238475920",
-        domain: "Tmall",
-        userNotes:
-          "Sneaker putih strip biru, Ukuran EU 42. Minta box sepatu utuh.",
-        status: "PENDING",
-        isChecked: false,
-      },
-    ],
-    notifications: [],
-  },
-  {
-    id: "SUB-202610-7450",
-    createdAt: "2026-10-09T07:20:00.000Z",
-    updatedAt: "2026-10-09T08:45:00.000Z",
-    userName: "Siti Rahmawati",
-    userPhone: "085712345678",
-    userEmail: "siti.rahma@gmail.com",
-    warehouseCode: "FP-SH-9142",
-    status: "REVIEWED",
-    reviewedAt: "2026-10-09T08:45:00.000Z",
-    reviewerName: "Admin Shanghai Ops",
-    overallAdminNotes:
-      "Semua link sudah kami cek ke seller Taobao. Barang siap di-order.",
-    links: [
-      {
-        id: "LINK-7450-1",
-        url: "https://item.taobao.com/item.htm?id=68192019",
-        domain: "Taobao",
-        userNotes: "Tas Canvas Selempang warna Cream Khaki",
-        status: "AVAILABLE",
-        adminNotes:
-          "Stok ready warna cream khaki. Harga promo seller ¥78 (~Rp 187.200).",
-        priceCny: 78,
-        priceIdr: 187200,
-        isChecked: true,
-      },
-      {
-        id: "LINK-7450-2",
-        url: "https://detail.1688.com/offer/712398471234.html",
-        domain: "1688",
-        userNotes: "Minimal order berapa pcs ya min? Mau beli 3 pcs.",
-        status: "AVAILABLE",
-        adminNotes:
-          "Bisa eceran 3 pcs via toko relasi kami di Shanghai. Harga ¥45/pcs.",
-        priceCny: 135,
-        priceIdr: 324000,
-        isChecked: true,
-      },
-    ],
-    notifications: [],
-  },
-  {
-    id: "SUB-202610-6104",
-    createdAt: "2026-10-08T15:30:00.000Z",
-    updatedAt: "2026-10-08T16:10:00.000Z",
-    userName: "Hendro Wijaya",
-    userPhone: "081900112233",
-    userEmail: "hendro.w@yahoo.com",
-    warehouseCode: "FP-SH-6320",
-    status: "NOTIFIED",
-    reviewedAt: "2026-10-08T16:00:00.000Z",
-    reviewerName: "Admin Fikri",
-    overallAdminNotes:
-      "Cek link selesai, notifikasi WhatsApp sudah dikirim ke user.",
-    links: [
-      {
-        id: "LINK-6104-1",
-        url: "https://item.taobao.com/item.htm?id=782910382901",
-        domain: "Taobao",
-        userNotes: "Hoodie Heavyweight 460GSM Charcoal Grey XL",
-        status: "AVAILABLE",
-        adminNotes: "Stok tersedia, bahan tebal 460GSM asli. Harga ¥169.",
-        priceCny: 169,
-        priceIdr: 405600,
-        isChecked: true,
-      },
-    ],
-    notifications: [
-      {
-        id: "NOTIF-6104-1",
-        sentAt: "2026-10-08T16:10:00.000Z",
-        channels: ["WHATSAPP", "EMAIL"],
-        message:
-          "Halo Hendro Wijaya, pengajuan cek link SUB-202610-6104 selesai dicek. Stok tersedia (¥169).",
-        recipientPhone: "081900112233",
-        recipientEmail: "hendro.w@yahoo.com",
-      },
-    ],
-  },
-];
+const DUMMY_SUBMISSION_IDS = new Set([
+  "SUB-202610-8912",
+  "SUB-202610-7450",
+  "SUB-202610-6104",
+]);
+
+const SEED_SUBMISSIONS: SubmissionRecord[] = [];
 
 interface SubmissionState {
   submissions: SubmissionRecord[];
@@ -169,6 +67,7 @@ interface SubmissionState {
   deleteSubmission: (submissionId: string) => void;
   getSubmissionById: (id: string) => SubmissionRecord | undefined;
   getUserSubmissions: (phoneOrEmailOrId?: string) => SubmissionRecord[];
+  syncWithServerCarts: (carts: CartWithImagesItem[]) => void;
   resetToDefaults: () => void;
 }
 
@@ -338,12 +237,168 @@ export const useSubmissionStore = create<SubmissionState>()(
         );
       },
 
+      syncWithServerCarts: (carts: CartWithImagesItem[]) => {
+        if (!carts || carts.length === 0) return;
+
+        set((state) => {
+          let hasChanges = false;
+
+          const normalizeUrl = (u: string) =>
+            u
+              .trim()
+              .toLowerCase()
+              .replace(/\/+$/, "")
+              .replace(/^https?:\/\/(www\.)?/, "");
+
+          const updatedSubmissions = state.submissions.map((sub) => {
+            let subModified = false;
+            let availableLinksCount = 0;
+
+            const nextLinks = sub.links.map((link) => {
+              const matchedCart = carts.find((c) => {
+                const normCartUrl = normalizeUrl(c.cart_url || "");
+                const normLinkUrl = normalizeUrl(link.url || "");
+                return (
+                  normCartUrl === normLinkUrl ||
+                  (normCartUrl &&
+                    normLinkUrl &&
+                    (normCartUrl.includes(normLinkUrl) ||
+                      normLinkUrl.includes(normCartUrl)))
+                );
+              });
+
+              if (!matchedCart) {
+                if (link.status === "AVAILABLE") availableLinksCount++;
+                return link;
+              }
+
+              const { priceIdr, priceCny } = parsePrice(matchedCart.cart_price);
+              const imageUrl = extractCartImageUrl(matchedCart.cart_images);
+              const title = matchedCart.cart_title;
+              const isValidated =
+                priceCny > 0 ||
+                (title && !title.includes("Marketplace China"));
+
+              if (isValidated) {
+                subModified = true;
+                availableLinksCount++;
+                return {
+                  ...link,
+                  status: "AVAILABLE" as const,
+                  isChecked: true,
+                  cartId: matchedCart.cart_id,
+                  productName: title || link.productName,
+                  priceCny: priceCny || link.priceCny,
+                  priceIdr: priceIdr || link.priceIdr,
+                  imageUrl: imageUrl || link.imageUrl,
+                  adminNotes: title
+                    ? `Terverifikasi Admin: ${title}`
+                    : link.adminNotes,
+                };
+              }
+
+              return link;
+            });
+
+            if (
+              subModified ||
+              (availableLinksCount > 0 && sub.status === "PENDING_REVIEW")
+            ) {
+              hasChanges = true;
+              return {
+                ...sub,
+                links: nextLinks,
+                status: "REVIEWED" as const,
+                serverStatus: "DONE",
+                isServerSynced: true,
+                reviewedAt: sub.reviewedAt || new Date().toISOString(),
+                reviewerName:
+                  sub.reviewerName || "Admin FLYPICK (Terverifikasi Server)",
+                updatedAt: new Date().toISOString(),
+              };
+            }
+
+            return sub;
+          });
+
+          // Check if there are carts from server that don't match any local submission
+          const allKnownUrls = new Set(
+            updatedSubmissions.flatMap((s) =>
+              s.links.map((l) => normalizeUrl(l.url)),
+            ),
+          );
+
+          const unlinkedCarts = carts.filter(
+            (c) => c.cart_url && !allKnownUrls.has(normalizeUrl(c.cart_url)),
+          );
+
+          if (unlinkedCarts.length > 0) {
+            hasChanges = true;
+            const newServerSub: SubmissionRecord = {
+              id: `SUB-SRV-${unlinkedCarts[0].cart_id.slice(0, 8).toUpperCase()}`,
+              createdAt:
+                unlinkedCarts[0].created_at || new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              userId: unlinkedCarts[0].user_id,
+              userName: "Pelanggan FLYPICK",
+              userPhone: "",
+              status: "REVIEWED",
+              reviewedAt: new Date().toISOString(),
+              reviewerName: "Admin FLYPICK (Sync Server)",
+              isServerSynced: true,
+              serverStatus: "DONE",
+              notifications: [],
+              links: unlinkedCarts.map((c, idx) => {
+                const { priceIdr, priceCny } = parsePrice(c.cart_price);
+                const imageUrl = extractCartImageUrl(c.cart_images);
+                return {
+                  id: `LINK-SRV-${c.cart_id.slice(0, 8)}-${idx + 1}`,
+                  url: c.cart_url,
+                  domain: extractDomain(c.cart_url),
+                  cartId: c.cart_id,
+                  productName: c.cart_title,
+                  userNotes: "Pengecekan Akun Server",
+                  status: "AVAILABLE",
+                  adminNotes: c.cart_title
+                    ? `Terverifikasi Admin: ${c.cart_title}`
+                    : undefined,
+                  priceCny,
+                  priceIdr,
+                  imageUrl,
+                  isChecked: true,
+                };
+              }),
+            };
+
+            updatedSubmissions.unshift(newServerSub);
+          }
+
+          if (!hasChanges) return state;
+
+          return {
+            submissions: updatedSubmissions,
+          };
+        });
+      },
+
       resetToDefaults: () => {
         set({ submissions: SEED_SUBMISSIONS });
       },
     }),
     {
       name: "flypick-submissions-store",
+      merge: (persistedState: unknown, currentState: SubmissionState) => {
+        const persisted = persistedState as
+          | Partial<SubmissionState>
+          | undefined;
+        const rawSubs = Array.isArray(persisted?.submissions)
+          ? persisted.submissions.filter((s) => !DUMMY_SUBMISSION_IDS.has(s.id))
+          : [];
+        return {
+          ...currentState,
+          submissions: rawSubs,
+        };
+      },
     },
   ),
 );

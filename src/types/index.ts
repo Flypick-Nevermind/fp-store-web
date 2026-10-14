@@ -7,6 +7,7 @@ import type {
   DeliveryAddress,
   ForwardingCategory,
   ForwardingItem,
+  PackagingOption,
   ShippingMethod,
 } from "@/schemas";
 
@@ -104,6 +105,7 @@ export type {
   DeliveryAddress,
   ForwardingCategory,
   ForwardingItem,
+  PackagingOption,
   ShippingMethod,
 };
 

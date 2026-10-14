@@ -117,9 +117,18 @@ export function ResultBiayaCard({
                       <p className="font-bold text-[#0F172A] truncate max-w-[190px]">
                         {title}
                       </p>
-                      <p className="text-[11px] text-[#64748B] font-mono truncate">
-                        {variantDesc} • Qty: {item.quantity}
-                      </p>
+                      <div className="text-[11px] text-[#64748B] font-mono truncate flex items-center gap-1.5">
+                        <span>{variantDesc} • Qty: {item.quantity}</span>
+                        {item.packagingOption === "NO_BOX" ? (
+                          <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1 rounded-xs border border-emerald-300 font-bold">
+                            No Box
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-blue-700 bg-blue-50 px-1 rounded-xs border border-blue-200 font-bold">
+                            With Box
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 

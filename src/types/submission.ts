@@ -14,6 +14,9 @@ export interface SubmissionItemLink {
   priceCny?: number;
   priceIdr?: number;
   isChecked?: boolean;
+  cartId?: string;
+  imageUrl?: string;
+  productName?: string;
 }
 
 export type SubmissionStatus = "PENDING_REVIEW" | "REVIEWED" | "NOTIFIED";

@@ -1,9 +1,14 @@
-"use client";
-
-import { ExternalLink, Package, Trash2, Truck } from "lucide-react";
+import {
+  Box,
+  ExternalLink,
+  Package,
+  PackageCheck,
+  Trash2,
+  Truck,
+} from "lucide-react";
 import { QtyControl } from "@/components/molecules";
 import { useCartActions } from "@/hooks/use-cart-actions";
-import { formatCny, formatIdr } from "@/lib/utils";
+import { cn, formatCny, formatIdr } from "@/lib/utils";
 import { useToast } from "@/providers/toast-provider";
 import type { BuyForMeItem, CartItem, ForwardingItem } from "@/types";
 
@@ -12,12 +17,13 @@ interface CartItemCardProps {
 }
 
 export function CartItemCard({ item }: CartItemCardProps) {
-  const { removeItem, updateQty } = useCartActions();
+  const { removeItem, updateQty, updatePackagingOption } = useCartActions();
   const { success } = useToast();
 
   const isBuyForMe = item.serviceType === "BUY_FOR_ME";
   const bfmItem = isBuyForMe ? (item as BuyForMeItem) : null;
   const fwdItem = !isBuyForMe ? (item as ForwardingItem) : null;
+  const packaging = item.packagingOption || "WITH_BOX";
 
   const handleDelete = () => {
     removeItem(item.id);
@@ -139,6 +145,99 @@ export function CartItemCard({ item }: CartItemCardProps) {
               )}
             </div>
           )}
+
+          {/* Opsi Kemasan Gudang China (With Box / No Box) */}
+          <div className="pt-2.5 pb-1 border-t border-[#F1F5F9] space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-sans text-xs font-bold text-[#0F172A] flex items-center gap-1.5">
+                <Box className="w-3.5 h-3.5 text-[#1035D0]" />
+                Opsi Kemasan Gudang China:
+              </span>
+              {packaging === "NO_BOX" ? (
+                <span className="font-sans text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 font-bold flex items-center gap-1">
+                  ⚡ Lepas Kardus (Hemat Ongkir)
+                </span>
+              ) : (
+                <span className="font-sans text-[11px] text-[#1035D0] bg-[#EFF6FF] px-2 py-0.5 rounded-md border border-[#BFDBFE] font-bold flex items-center gap-1">
+                  📦 Kardus Utuh Dipertahankan
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {/* With Box Button */}
+              <button
+                type="button"
+                onClick={() => updatePackagingOption(item.id, "WITH_BOX")}
+                className={cn(
+                  "p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-2.5",
+                  packaging === "WITH_BOX"
+                    ? "bg-[#EFF6FF] border-[#1035D0] shadow-xs ring-1 ring-[#1035D0]/30"
+                    : "bg-white border-[#E2E8F0] hover:border-slate-300",
+                )}
+              >
+                <div className="mt-0.5 shrink-0">
+                  <div
+                    className={cn(
+                      "w-4 h-4 rounded-full border-2 flex items-center justify-center",
+                      packaging === "WITH_BOX"
+                        ? "border-[#1035D0] bg-[#1035D0]"
+                        : "border-slate-300 bg-white",
+                    )}
+                  >
+                    {packaging === "WITH_BOX" && (
+                      <span className="w-1.5 h-1.5 bg-white rounded-full" />
+                    )}
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#0F172A]">
+                    <PackageCheck className="w-3.5 h-3.5 text-[#1035D0]" />
+                    <span>With Box</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-sans leading-tight mt-0.5">
+                    Kirim dengan box asli (sepatu/figure/tas/koleksi)
+                  </p>
+                </div>
+              </button>
+
+              {/* No Box Button */}
+              <button
+                type="button"
+                onClick={() => updatePackagingOption(item.id, "NO_BOX")}
+                className={cn(
+                  "p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-2.5",
+                  packaging === "NO_BOX"
+                    ? "bg-emerald-50 border-emerald-600 shadow-xs ring-1 ring-emerald-600/30"
+                    : "bg-white border-[#E2E8F0] hover:border-slate-300",
+                )}
+              >
+                <div className="mt-0.5 shrink-0">
+                  <div
+                    className={cn(
+                      "w-4 h-4 rounded-full border-2 flex items-center justify-center",
+                      packaging === "NO_BOX"
+                        ? "border-emerald-600 bg-emerald-600"
+                        : "border-slate-300 bg-white",
+                    )}
+                  >
+                    {packaging === "NO_BOX" && (
+                      <span className="w-1.5 h-1.5 bg-white rounded-full" />
+                    )}
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900">
+                    <Box className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>No Box</span>
+                  </div>
+                  <p className="text-[10px] text-emerald-700 font-sans leading-tight mt-0.5">
+                    Box dilepas di gudang China untuk memangkas berat volume kargo
+                  </p>
+                </div>
+              </button>
+            </div>
+          </div>
 
           {/* Quantity Stepper & Remove per link */}
           <div className="flex items-center gap-4 pt-2">
