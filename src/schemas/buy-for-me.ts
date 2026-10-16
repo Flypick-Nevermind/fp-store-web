@@ -29,6 +29,7 @@ export const BuyForMeItemSchema = z.object({
   selectedVariant: VariantSchema,
   quantity: z.number().int().min(1, "Jumlah pesanan minimal 1"),
   packagingOption: PackagingOptionEnum.optional(),
+  cartId: z.string().optional(),
   notes: z.string().optional(),
   imageUrl: z.string().url().optional().or(z.literal("")),
 });

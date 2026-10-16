@@ -2,22 +2,28 @@
 
 import confetti from "canvas-confetti";
 import {
+  AlertCircle,
   ArrowRight,
   Check,
   CheckCircle2,
   Copy,
   CreditCard,
+  ExternalLink,
   Loader2,
   Plane,
   QrCode,
+  ShieldCheck,
   Sparkles,
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Badge } from "@/components/atoms";
+import { useCheckoutMutation } from "@/hooks/use-order-api";
+import { formatApiErrorMessage } from "@/lib/api-client";
 import { formatIdr } from "@/lib/utils";
 import { useToast } from "@/providers/toast-provider";
+import { useAuthStore } from "@/store/use-auth-store";
 import { useCartStore } from "@/store/use-cart-store";
 import { useCheckoutStore } from "@/store/use-checkout-store";
 
@@ -33,15 +39,22 @@ export function PaymentModal({
   stage1TotalIdr,
 }: PaymentModalProps) {
   const router = useRouter();
-  const { success } = useToast();
+  const { success, error: toastError, info } = useToast();
   const items = useCartStore((s) => s.items);
   const clearCart = useCartStore((s) => s.clearCart);
   const createOrder = useCheckoutStore((s) => s.createOrder);
+  const deliveryAddress = useCheckoutStore((s) => s.deliveryAddress);
+
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const openLoginModal = useAuthStore((s) => s.openLoginModal);
+
+  const checkoutMutation = useCheckoutMutation();
 
   const [paymentMethod, setPaymentMethod] = useState<"QRIS" | "VA">("QRIS");
-  const [isProcessing, setIsProcessing] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
   const [createdOrderCode, setCreatedOrderCode] = useState<string>("");
+  const [paymentInstructions, setPaymentInstructions] = useState<string>("");
   const [copiedVa, setCopiedVa] = useState(false);
 
   if (!isOpen) return null;
@@ -54,16 +67,62 @@ export function PaymentModal({
     setTimeout(() => setCopiedVa(false), 2000);
   };
 
-  const handleSimulatePayment = async () => {
-    setIsProcessing(true);
+  const handleExecutePayment = async () => {
+    if (!isAuthenticated || !user) {
+      info(
+        "Harap Masuk Akun",
+        "Silakan masuk ke akun Anda terlebih dahulu agar pesanan tercatat di manifes.",
+      );
+      openLoginModal();
+      return;
+    }
 
-    setTimeout(() => {
-      // Create official order
-      const newOrder = createOrder(items, stage1TotalIdr);
-      setCreatedOrderCode(newOrder.id);
+    if (items.length === 0) {
+      toastError(
+        "Keranjang Kosong",
+        "Tidak ada produk dalam keranjang untuk dicheckout.",
+      );
+      return;
+    }
+
+    // Check if any items don't have valid price yet
+    const unpricedItems = items.filter(
+      (it) => it.serviceType === "BUY_FOR_ME" && (it.priceIdr || 0) <= 0,
+    );
+    if (unpricedItems.length > 0) {
+      toastError(
+        "Item Belum Divalidasi",
+        "Beberapa item di keranjang belum memiliki harga valid dari admin. Harap tunggu verifikasi selesai.",
+      );
+      return;
+    }
+
+    try {
+      const backendPaymentMethod =
+        paymentMethod === "VA" ? "BANK_TRANSFER" : "QRIS";
+
+      const response = await checkoutMutation.mutateAsync({
+        items,
+        deliveryAddress,
+        paymentMethod: backendPaymentMethod,
+        userId: user.id,
+      });
+
+      const orderNumber =
+        response.order?.order_number ||
+        response.order?.order_id ||
+        `FP-ORD-${Math.floor(100000 + Math.random() * 900000)}`;
+
+      setCreatedOrderCode(orderNumber);
+      if (response.payment_instructions) {
+        setPaymentInstructions(response.payment_instructions);
+      }
+
+      // Record in local store for instant local cache
+      createOrder(items, stage1TotalIdr);
+
+      // Clear the cart
       clearCart();
-      setIsProcessing(false);
-      setIsPaid(true);
 
       // Launch celebration confetti
       try {
@@ -77,17 +136,24 @@ export function PaymentModal({
         // fallback
       }
 
+      setIsPaid(true);
+
       success(
-        "Pembayaran Berhasil Diverifikasi!",
-        `Tiket Order ${newOrder.id} telah diterbitkan dan masuk antrean manifest.`,
+        "Pesanan Berhasil Dibuat!",
+        `Nomor Pesanan ${orderNumber} telah diterbitkan dan tersimpan di database Flypick.`,
       );
-    }, 1200);
+    } catch (err: unknown) {
+      const errorMsg = formatApiErrorMessage(err);
+      toastError("Checkout Gagal", errorMsg);
+    }
   };
 
   const handleGoToTracking = () => {
     onClose();
     router.push("/profile");
   };
+
+  const isPending = checkoutMutation.isPending;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/70 backdrop-blur-xs animate-in fade-in">
@@ -103,11 +169,11 @@ export function PaymentModal({
                 Menu Pembayaran Tagihan
               </h3>
               <p className="text-[11px] text-[#93C5FD]">
-                Gate Keberangkatan &amp; Pembayaran Resmi
+                Gate Keberangkatan &amp; Pembayaran Resmi Flypick
               </p>
             </div>
           </div>
-          {!isPaid && (
+          {!isPaid && !isPending && (
             <button
               type="button"
               onClick={onClose}
@@ -142,6 +208,7 @@ export function PaymentModal({
                 <button
                   type="button"
                   onClick={() => setPaymentMethod("QRIS")}
+                  disabled={isPending}
                   className={`p-3 rounded-xl font-sans text-xs font-bold border-2 flex items-center justify-center gap-2 transition-all cursor-pointer ${
                     paymentMethod === "QRIS"
                       ? "bg-[#1035D0] text-white border-[#1035D0] shadow-sm"
@@ -155,6 +222,7 @@ export function PaymentModal({
                 <button
                   type="button"
                   onClick={() => setPaymentMethod("VA")}
+                  disabled={isPending}
                   className={`p-3 rounded-xl font-sans text-xs font-bold border-2 flex items-center justify-center gap-2 transition-all cursor-pointer ${
                     paymentMethod === "VA"
                       ? "bg-[#1035D0] text-white border-[#1035D0] shadow-sm"
@@ -224,22 +292,35 @@ export function PaymentModal({
                 </div>
               )}
 
-              {/* Simulation payment button */}
+              {/* Delivery recipient preview */}
+              <div className="text-[11px] text-[#64748B] bg-[#F8FAFC] p-3 rounded-xl border border-[#E2E8F0] flex items-center justify-between">
+                <div>
+                  <span className="font-bold text-[#1E293B] block">
+                    Kirim ke: {deliveryAddress.recipientName} ({deliveryAddress.phone})
+                  </span>
+                  <span className="text-[#64748B] block truncate max-w-xs">
+                    {deliveryAddress.city}, {deliveryAddress.streetAddress}
+                  </span>
+                </div>
+                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 ml-2" />
+              </div>
+
+              {/* Payment button connecting to backend */}
               <button
                 type="button"
-                disabled={isProcessing}
-                onClick={handleSimulatePayment}
+                disabled={isPending}
+                onClick={handleExecutePayment}
                 className="w-full flex items-center justify-center gap-2 py-3.5 px-5 bg-[#1035D0] hover:bg-[#0D2BAA] disabled:opacity-70 text-white font-sans font-bold text-sm rounded-xl shadow-[0_12px_24px_-4px_rgba(16,53,208,0.35)] transition-all cursor-pointer"
               >
-                {isProcessing ? (
+                {isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-[#00F0FF]" />
-                    <span>Memproses Pembayaran...</span>
+                    <span>Menerbitkan Order &amp; Memverifikasi...</span>
                   </>
                 ) : (
                   <>
                     <CheckCircle2 className="w-4 h-4 text-[#00F0FF]" />
-                    <span>Simulasi Bayar Berhasil (Test Gateway)</span>
+                    <span>Bayar &amp; Terbitkan Tiket Order</span>
                   </>
                 )}
               </button>
@@ -252,17 +333,29 @@ export function PaymentModal({
               </div>
 
               <div className="space-y-1.5">
-                <Badge variant="electric">PEMBAYARAN DIVERIFIKASI</Badge>
+                <Badge variant="electric">TIKET ORDER TERBIT</Badge>
                 <h2 className="font-sans font-black text-xl text-[#0F172A] uppercase">
-                  Tiket Order Diterbitkan!
+                  Pesanan Berhasil Masuk Manifest!
                 </h2>
-                <p className="font-mono text-sm text-[#1035D0] font-black">
-                  Ref: {createdOrderCode}
-                </p>
+                <div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl inline-block my-1">
+                  <span className="text-[10px] text-slate-400 uppercase font-mono block">
+                    Nomor Pesanan Resmi
+                  </span>
+                  <p className="font-mono text-base text-[#1035D0] font-black tracking-wider">
+                    {createdOrderCode}
+                  </p>
+                </div>
+
+                {paymentInstructions && (
+                  <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl max-w-sm mx-auto font-medium">
+                    {paymentInstructions}
+                  </p>
+                )}
+
                 <p className="text-xs text-[#64748B] max-w-sm mx-auto pt-1 leading-relaxed">
-                  Pesanan Anda telah dimasukkan ke dalam manifest jadwal
-                  penerbangan Shanghai. Anda dapat memantau proses unboxing
-                  Photo QC di menu pelacakan.
+                  Pesanan Anda telah resmi tercatat di database Flypick dan
+                  dimasukkan ke dalam antrean manifest penerbangan kargo. Anda
+                  dapat memantau update status dan Photo QC di menu pelacakan.
                 </p>
               </div>
 
@@ -272,7 +365,7 @@ export function PaymentModal({
                   onClick={handleGoToTracking}
                   className="w-full flex items-center justify-center gap-2 py-3.5 px-5 bg-[#1035D0] hover:bg-[#0D2BAA] text-white font-sans font-bold text-sm rounded-xl shadow-[0_12px_24px_-4px_rgba(16,53,208,0.35)] transition-all cursor-pointer"
                 >
-                  <span>Lihat Timeline &amp; Lacak Pesanan</span>
+                  <span>Lihat Timeline &amp; Lacak di Profil</span>
                   <ArrowRight className="w-4 h-4 text-[#00F0FF]" />
                 </button>
               </div>
@@ -283,3 +376,4 @@ export function PaymentModal({
     </div>
   );
 }
+

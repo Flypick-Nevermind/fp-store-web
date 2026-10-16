@@ -92,6 +92,7 @@ export function UserSubmissionsList() {
 
     const cartItem: CartItem = {
       id: `FP-BFM-${cart.cart_id}`,
+      cartId: cart.cart_id,
       serviceType: "BUY_FOR_ME",
       sourceUrl: cart.cart_url,
       productName: cart.cart_title || `${domain} - Pengecekan #${cart.cart_id.slice(0, 8)}`,

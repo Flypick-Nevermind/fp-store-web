@@ -153,3 +153,78 @@ export interface CartCreationResponseData {
   created_at: string;
   updated_at: string;
 }
+
+// ── Order & Checkout API Types ────────────────────────────────────
+export interface CheckoutItemRequest {
+  cart_id: string;
+  quantity: number;
+  notes?: string;
+}
+
+export interface ShippingAddressRequest {
+  recipient_name: string;
+  recipient_phone: string;
+  shipping_address: string;
+  shipping_city: string;
+  shipping_postal_code?: string;
+  shipping_notes?: string;
+}
+
+export interface CheckoutRequest {
+  user_id: string;
+  items: CheckoutItemRequest[];
+  shipping_address: ShippingAddressRequest;
+  payment_method: "BANK_TRANSFER" | "QRIS" | "MANUAL" | string;
+}
+
+export interface MsFlypickOrderDetail {
+  order_detail_id: string;
+  order_id: string;
+  cart_id: string;
+  product_url: string;
+  product_title: string;
+  product_price: number;
+  product_image: string;
+  quantity: number;
+  notes: string;
+  subtotal: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MsFlypickOrder {
+  order_id: string;
+  order_number: string;
+  user_id: string;
+  order_status:
+    | "WAITING_PAYMENT"
+    | "PAID"
+    | "PROCESSING"
+    | "SHIPPED"
+    | "COMPLETED"
+    | "CANCELLED"
+    | string;
+  total_item_price: number;
+  service_fee: number;
+  shipping_fee: number;
+  total_amount: number;
+  payment_method: string;
+  payment_status: "PENDING" | "PAID" | "FAILED" | string;
+  recipient_name: string;
+  recipient_phone: string;
+  shipping_address: string;
+  shipping_city: string;
+  shipping_postal_code?: string;
+  shipping_notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrderWithDetails extends MsFlypickOrder {
+  items: MsFlypickOrderDetail[];
+}
+
+export interface CheckoutResponseData {
+  order: OrderWithDetails;
+  payment_instructions?: string;
+}
