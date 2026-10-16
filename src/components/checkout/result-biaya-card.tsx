@@ -172,16 +172,18 @@ export function ResultBiayaCard({
               {isHandcarry ? (
                 <Luggage className="w-3.5 h-3.5 text-[#1035D0]" />
               ) : (
-                <Truck className="w-3.5 h-3.5 text-[#64748B]" />
+                <Truck className="w-3.5 h-3.5 text-[#1035D0]" />
               )}
               <span className="font-semibold text-xs">
                 {isHandcarry
                   ? `Tiket Handcarry (${totalItemCount} pcs @Rp 95k)`
-                  : "Tiket Jasa Kargo (Tahap 1)"}
+                  : "Ongkir Kargo Internasional (All-In)"}
               </span>
             </div>
             <span className="font-mono font-bold text-xs">
-              {isHandcarry ? formatIdr(handcarryShippingFee) : "Rp 0 (Tahap 1)"}
+              {formatIdr(
+                isHandcarry ? handcarryShippingFee : cargoEstimatedStage2,
+              )}
             </span>
           </div>
 
@@ -216,12 +218,10 @@ export function ResultBiayaCard({
           <div className="flex justify-between items-baseline">
             <div>
               <p className="font-sans font-black text-xs text-[#0F172A] uppercase tracking-tight">
-                TOTAL RESULT BIAYA
+                TOTAL PEMBAYARAN (1X BAYAR)
               </p>
               <p className="text-[11px] text-[#64748B]">
-                {isHandcarry
-                  ? "Pembayaran All-in (Siap Terbang)"
-                  : "Invoice Tahap 1 (Talangan & Handling)"}
+                Pembayaran All-in (Bebas Biaya Susulan)
               </p>
             </div>
             <div className="text-right">
@@ -232,34 +232,18 @@ export function ResultBiayaCard({
           </div>
         </div>
 
-        {/* ── Stage 2 Info Notice (if Cargo) ─────────────────────── */}
-        {!isHandcarry ? (
-          <div className="p-3 bg-[#FFFBEB] rounded-xl border border-[#FDE68A] text-[11px] text-[#92400E] space-y-1">
-            <div className="flex items-center gap-1.5 font-bold">
-              <Info className="w-3.5 h-3.5 shrink-0" />
-              <span>Ongkir Kargo Ditimbang di Gudang Shanghai:</span>
-            </div>
-            <p className="leading-relaxed">
-              Biaya kargo diestimasi{" "}
-              <strong className="font-mono font-bold text-[#B45309]">
-                {formatIdr(cargoEstimatedStage2)}
-              </strong>{" "}
-              (est. 1.5kg). Ditagihkan saat barang tiba di Shanghai Hub lengkap
-              dengan foto unboxing QC.
-            </p>
+        {/* ── All-In Notice (Single Payment Guarantee) ───────────── */}
+        <div className="p-3 bg-[#EFF6FF] rounded-xl border border-[#BFDBFE] text-[11px] text-[#1E40AF] space-y-1">
+          <div className="flex items-center gap-1.5 font-bold">
+            <Sparkles className="w-3.5 h-3.5 shrink-0 text-[#1035D0]" />
+            <span>1x Pembayaran All-In (Satu Tagihan):</span>
           </div>
-        ) : (
-          <div className="p-3 bg-[#ECFDF5] rounded-xl border border-[#A7F3D0] text-[11px] text-[#065F46] space-y-1">
-            <div className="flex items-center gap-1.5 font-bold">
-              <Sparkles className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
-              <span>Bebas Tagihan Tambahan (All-In):</span>
-            </div>
-            <p className="leading-relaxed">
-              Tiket Handcarry sudah mencakup bagasi kabin traveler VIP &amp; bea
-              cukai personal. Tidak ada biaya siluman saat barang mendarat.
-            </p>
-          </div>
-        )}
+          <p className="leading-relaxed text-[#1E3A8A]">
+            Seluruh biaya barang, talangan, inspeksi, dan ongkir internasional
+            dilunasi 1 kali di awal. Tidak ada biaya tagihan terpisah saat barang
+            tiba.
+          </p>
+        </div>
 
         {/* ── Main CTA Button: Lanjut ke Menu Pembayaran ─────────── */}
         <button

@@ -36,17 +36,17 @@ export function useCheckoutFlow() {
   const handcarryRatePerItem = BRANDING.shippingRates.handcarry.ratePerItem;
   const handcarryShippingFee = totalItemCount * handcarryRatePerItem;
 
-  // Cargo estimated Stage 2 (estimated 1.5kg)
+  // Cargo estimated freight
   const cargoRatePerKg = BRANDING.shippingRates.cargo.ratePerKg;
   const estimatedWeightKg = 1.5;
   const cargoEstimatedStage2 = Math.round(cargoRatePerKg * estimatedWeightKg);
 
-  // For Handcarry: shipping fee is billed directly in Stage 1!
-  // For Cargo: shipping fee is billed in Stage 2 after weighing in Shanghai.
-  const stage1ShippingFee = isHandcarry ? handcarryShippingFee : 0;
-  const grandTotalStage1 =
-    subtotalIdr + serviceFeeIdr + addOnsTotal + stage1ShippingFee;
-  const estimatedStage2 = isHandcarry ? 0 : cargoEstimatedStage2;
+  // 1x Pembayaran Saja (All-In):
+  // Seluruh biaya (harga barang, fee talangan, proteksi, & ongkir kargo/handcarry)
+  // dibayarkan 1 kali di awal (Single Payment).
+  const shippingFee = isHandcarry ? handcarryShippingFee : cargoEstimatedStage2;
+  const grandTotalAllIn =
+    subtotalIdr + serviceFeeIdr + addOnsTotal + shippingFee;
 
   return {
     items,
@@ -65,9 +65,11 @@ export function useCheckoutFlow() {
     isHandcarry,
     handcarryShippingFee,
     cargoEstimatedStage2,
-    stage1ShippingFee,
-    grandTotalStage1,
-    estimatedStage2,
+    shippingFee,
+    stage1ShippingFee: shippingFee,
+    grandTotalStage1: grandTotalAllIn,
+    grandTotalAllIn,
+    estimatedStage2: 0,
     isPaymentModalOpen,
     openPaymentModal: () => setIsPaymentModalOpen(true),
     closePaymentModal: () => setIsPaymentModalOpen(false),

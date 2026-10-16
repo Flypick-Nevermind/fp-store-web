@@ -13,7 +13,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Barcode } from "@/components/ui/barcode";
 import { useStage2Payment } from "@/hooks/use-stage2-payment";
-import { formatIdr } from "@/lib/utils";
+import { cn, formatIdr } from "@/lib/utils";
 import type { OrderRecord } from "@/types";
 import { Stage2PaymentCard } from "./stage2-payment-card";
 import { Stage2PaymentModal } from "./stage2-payment-modal";
@@ -119,23 +119,23 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-[#1A1A24]/70">
-                  Invoice Tahap 1:{" "}
-                  <strong className="text-[#1A1A24]">
+                  Total Tagihan:{" "}
+                  <strong className="text-[#1A1A24] font-mono font-bold">
                     {formatIdr(order.stage1Amount)}
                   </strong>
                 </span>
-                {isHandcarry ? (
-                  <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 font-bold border border-emerald-300">
-                    BEBAS ONGKIR TAHAP 2 (LUNAS ALL-IN)
-                  </span>
-                ) : (
-                  <span className="text-[#1A1A24]/70">
-                    Est. Tahap 2:{" "}
-                    <strong className="text-[#2323FF]">
-                      {formatIdr(order.stage2EstimatedAmount)}
-                    </strong>
-                  </span>
-                )}
+                <span
+                  className={cn(
+                    "px-2 py-0.5 font-mono font-bold border rounded-md text-[10px]",
+                    order.stage1PaymentStatus === "PAID"
+                      ? "text-emerald-700 bg-emerald-50 border-emerald-300"
+                      : "text-amber-700 bg-amber-50 border-amber-300",
+                  )}
+                >
+                  {order.stage1PaymentStatus === "PAID"
+                    ? "LUNAS (ALL-IN)"
+                    : "MENUNGGU VERIFIKASI"}
+                </span>
               </div>
             </div>
 

@@ -105,14 +105,16 @@ export function mapBackendOrderToOrderRecord(
   const timeline: TimelineEvent[] = [
     {
       stage: "ORDER_PLACED",
-      title: "Order Placed (Pesanan Dibuat)",
-      description: `Nomor Order ${order.order_number} telah dibuat di sistem Flypick. ${
-        isPaid ? "Pembayaran Terkonfirmasi." : "Menunggu Pelunasan Pembayaran."
-      }`,
+      title: isPaid
+        ? "Pesanan Dibuat (Pembayaran Terverifikasi)"
+        : "Pesanan Dibuat (Menunggu Verifikasi Admin)",
+      description: isPaid
+        ? `Nomor Order ${order.order_number} telah diverifikasi lunas. Data pesanan siap diteruskan ke tim pembelian Shanghai.`
+        : `Nomor Order ${order.order_number} telah dibuat. Menunggu verifikasi mutasi struk pembayaran oleh Finance Admin.`,
       timestamp: `${formattedDate} WIB`,
       location: "FLYPICK Intake Cloud",
-      isCompleted: currentStageIdx >= 0,
-      isCurrent: currentStageIdx === 0,
+      isCompleted: isPaid,
+      isCurrent: !isPaid,
     },
     {
       stage: "PURCHASED_INBOUND",
@@ -213,9 +215,9 @@ export function mapBackendOrderToOrderRecord(
     addOns: { photoQc: true, extraBubbleWrap: true },
     stage1Amount: order.total_amount,
     stage1PaymentStatus,
-    stage2EstimatedAmount: order.shipping_fee || 0,
-    stage2ActualAmount: order.shipping_fee || 0,
-    stage2PaymentStatus: isPaid ? "PENDING" : "PENDING",
+    stage2EstimatedAmount: 0,
+    stage2ActualAmount: 0,
+    stage2PaymentStatus: isPaid ? "PAID" : "PENDING",
     currentStage,
     timeline,
   };
