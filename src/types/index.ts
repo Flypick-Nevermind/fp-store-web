@@ -91,6 +91,11 @@ export interface OrderRecord {
   currentStage: OrderOperationalStage;
   timeline: TimelineEvent[];
   qcData?: QcInspectionData;
+  paymentProofUrl?: string;
+  actualWeightKg?: number;
+  airWaybillNo?: string;
+  domesticCourier?: string;
+  domesticTrackingNo?: string;
 }
 
 export type CheckoutStep = "CART" | "CHECKOUT" | "PAYMENT" | "SUCCESS";

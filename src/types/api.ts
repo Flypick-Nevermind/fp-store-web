@@ -101,6 +101,8 @@ export interface CartWithImagesItem {
   created_at: string;
   updated_at: string;
   user_id: string;
+  is_reject?: boolean;
+  detail_notes?: string;
 }
 
 export interface CartLookupPayload {
@@ -175,6 +177,12 @@ export interface CheckoutRequest {
   items: CheckoutItemRequest[];
   shipping_address: ShippingAddressRequest;
   payment_method: "BANK_TRANSFER" | "QRIS" | "MANUAL" | string;
+  payment_proof_url?: string;
+  shipping_service_type?: "CARGO_AIR" | "CARGO_SEA" | "HANDCARRY_VIP" | string;
+  add_ons?: {
+    photo_qc?: boolean;
+    extra_bubble_wrap?: boolean;
+  };
 }
 
 export interface MsFlypickOrderDetail {
@@ -210,6 +218,12 @@ export interface MsFlypickOrder {
   total_amount: number;
   payment_method: string;
   payment_status: "PENDING" | "PAID" | "FAILED" | string;
+  payment_proof_url?: string;
+  shipping_service_type?: string;
+  actual_weight_kg?: number;
+  air_waybill_no?: string;
+  domestic_courier?: string;
+  domestic_tracking_no?: string;
   recipient_name: string;
   recipient_phone: string;
   shipping_address: string;
@@ -227,4 +241,38 @@ export interface OrderWithDetails extends MsFlypickOrder {
 export interface CheckoutResponseData {
   order: OrderWithDetails;
   payment_instructions?: string;
+}
+
+export interface UploadImageResponseData {
+  url?: string;
+  file_url?: string;
+  media_key?: string;
+  object_key?: string;
+  key?: string;
+}
+
+export interface VerifyOrderPaymentPayload {
+  payment_status: "PAID" | "REJECTED" | string;
+  order_status?: "PROCESSING" | "CANCELLED" | string;
+  verification_notes?: string;
+}
+
+export interface AdminUpdateCartPayload {
+  cart_price?: string;
+  cart_title?: string;
+  cart_images?: string[];
+  is_reject?: boolean;
+  detail_notes?: string;
+}
+
+export interface AdminCartCreationSummary {
+  cart_creation_id: string;
+  user_id: string;
+  user_name?: string;
+  user_email?: string;
+  user_phone?: string;
+  status: "ON_PROGRESS" | "REVIEWED" | "COMPLETED" | string;
+  details?: CartCreationDetailWithCart[];
+  created_at: string;
+  updated_at: string;
 }

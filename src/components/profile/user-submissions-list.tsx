@@ -12,6 +12,7 @@ import {
   Search,
   ShoppingCart,
   Sparkles,
+  XCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -117,24 +118,36 @@ export function UserSubmissionsList() {
     router.push("/cart");
   };
 
-  // Filter carts by search query
-  const filteredCarts = carts.filter((c) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase().trim();
-    return (
-      c.cart_id.toLowerCase().includes(q) ||
-      (c.cart_title && c.cart_title.toLowerCase().includes(q)) ||
-      (c.cart_url && c.cart_url.toLowerCase().includes(q))
-    );
-  });
+  // Filter carts by search query and sort by newest first (created_at DESC)
+  const filteredCarts = [...carts]
+    .filter((c) => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase().trim();
+      return (
+        c.cart_id.toLowerCase().includes(q) ||
+        (c.cart_title && c.cart_title.toLowerCase().includes(q)) ||
+        (c.cart_url && c.cart_url.toLowerCase().includes(q))
+      );
+    })
+    .sort((a, b) => {
+      const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return timeB - timeA;
+    });
 
   // Calculate status counts
+  const rejectedCount = carts.filter((c) => Boolean(c.is_reject)).length;
   const readyCount = carts.filter((c) => {
+    if (c.is_reject) return false;
     const { priceCny } = parsePrice(c.cart_price);
-    return priceCny > 0 && c.cart_title && !c.cart_title.toLowerCase().includes("marketplace china");
+    return (
+      priceCny > 0 &&
+      c.cart_title &&
+      !c.cart_title.toLowerCase().includes("marketplace china")
+    );
   }).length;
 
-  const pendingCount = carts.length - readyCount;
+  const pendingCount = carts.length - readyCount - rejectedCount;
 
   // 1. Not Authenticated State
   if (!isAuthenticated || !user) {
@@ -179,6 +192,11 @@ export function UserSubmissionsList() {
             {pendingCount > 0 && (
               <span className="text-[11px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                 {pendingCount} Diproses
+              </span>
+            )}
+            {rejectedCount > 0 && (
+              <span className="text-[11px] font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
+                {rejectedCount} Tidak Tersedia
               </span>
             )}
           </div>
@@ -294,7 +312,9 @@ export function UserSubmissionsList() {
             const { priceIdr, priceCny } = parsePrice(cart.cart_price);
             const imageUrl = extractCartImageUrl(cart.cart_images);
             const domain = extractDomain(cart.cart_url);
+            const isRejected = Boolean(cart.is_reject);
             const isValidated =
+              !isRejected &&
               priceCny > 0 &&
               cart.cart_title &&
               !cart.cart_title.toLowerCase().includes("marketplace china");
@@ -310,9 +330,11 @@ export function UserSubmissionsList() {
                 key={cart.cart_id}
                 className={cn(
                   "bg-white rounded-2xl border transition-all overflow-hidden p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs hover:shadow-xs",
-                  isValidated
-                    ? "border-blue-200/90 bg-gradient-to-r from-white via-white to-blue-50/20"
-                    : "border-slate-200/90",
+                  isRejected
+                    ? "border-red-200/90 bg-gradient-to-r from-white via-white to-red-50/20"
+                    : isValidated
+                      ? "border-blue-200/90 bg-gradient-to-r from-white via-white to-blue-50/20"
+                      : "border-slate-200/90",
                 )}
               >
                 {/* Left Side: Thumbnail & Product Details */}
@@ -373,7 +395,25 @@ export function UserSubmissionsList() {
                     </div>
 
                     {/* Price and Validation Feedback */}
-                    {isValidated ? (
+                    {isRejected ? (
+                      <div className="pt-1 space-y-1.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200">
+                            <XCircle className="w-3 h-3 text-red-600" />
+                            Stok Habis / Ditolak Admin
+                          </span>
+                        </div>
+                        {cart.detail_notes ? (
+                          <p className="text-[11px] text-red-700 font-medium bg-red-50/80 px-2.5 py-1.5 rounded-lg border border-red-200/80 leading-relaxed">
+                            <strong className="font-bold">Alasan Admin:</strong> {cart.detail_notes}
+                          </p>
+                        ) : (
+                          <p className="text-[11px] text-red-600/80 italic">
+                            Barang tidak tersedia atau seller telah menutup penjualan produk ini.
+                          </p>
+                        )}
+                      </div>
+                    ) : isValidated ? (
                       <div className="pt-1 flex items-center gap-2 flex-wrap">
                         <span className="font-mono font-black text-sm text-[#1035D0]">
                           ¥{priceCny} CNY
@@ -397,7 +437,12 @@ export function UserSubmissionsList() {
                 {/* Right Side: Status Badge & Actions */}
                 <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
                   {/* Status Pill */}
-                  {isValidated ? (
+                  {isRejected ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-700 text-xs font-bold border border-red-200/80">
+                      <XCircle className="w-3.5 h-3.5 text-red-600" />
+                      Tidak Tersedia
+                    </span>
+                  ) : isValidated ? (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-[#1035D0] text-xs font-bold border border-blue-200/80">
                       <CheckCircle2 className="w-3.5 h-3.5 text-[#1035D0]" />
                       Sudah Dicek • Ready
@@ -410,7 +455,19 @@ export function UserSubmissionsList() {
                   )}
 
                   {/* Action Button */}
-                  {isValidated ? (
+                  {isRejected ? (
+                    <a
+                      href={`https://wa.me/6281299887766?text=${encodeURIComponent(
+                        `Halo Admin FLYPICK, barang pesanan saya #${cart.cart_id.slice(0, 8)} (${cart.cart_url}) ditolak dengan alasan "${cart.detail_notes || "Stok habis"}". Apakah ada rekomendasi link toko lain?`,
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3.5 py-2 rounded-xl text-red-700 bg-red-50 hover:bg-red-100 text-xs font-bold border border-red-200 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5 text-red-600" />
+                      <span>Cari Alternatif</span>
+                    </a>
+                  ) : isValidated ? (
                     <button
                       type="button"
                       onClick={() => handleAddToCart(cart)}

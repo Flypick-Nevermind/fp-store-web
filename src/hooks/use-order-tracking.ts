@@ -7,6 +7,8 @@ import { useAuthStore } from "@/store/use-auth-store";
 import { useCheckoutStore } from "@/store/use-checkout-store";
 import type { OrderRecord } from "@/types";
 
+const DUMMY_ORDER_IDS = new Set(["FP-ORD-882190"]);
+
 export function useOrderTracking() {
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -29,25 +31,29 @@ export function useOrderTracking() {
     return serverOrders.map(mapBackendOrderToOrderRecord);
   }, [serverOrders]);
 
-  // Combine orders prioritizing backend orders, followed by non-duplicate local orders
+  // When authenticated, real database orders from GET /api/v1/orders/user/:user_id
+  // are the single source of truth.
+  // Sort by checkout date descending (latest checkout first)
   const orders: OrderRecord[] = useMemo(() => {
-    if (!isAuthenticated || !user) {
-      return localOrders;
-    }
-    if (mappedServerOrders.length === 0) {
-      return localOrders;
+    const getTime = (dateStr?: string) => {
+      if (!dateStr) return 0;
+      const t = new Date(dateStr).getTime();
+      return isNaN(t) ? 0 : t;
+    };
+
+    if (isAuthenticated && user) {
+      return [...mappedServerOrders].sort(
+        (a, b) => getTime(b.createdAt) - getTime(a.createdAt),
+      );
     }
 
-    const serverOrderNumbers = new Set(
-      mappedServerOrders.map((o) => o.trackingCode || o.id),
+    // Guest / unauthenticated fallback
+    const cleanLocal = localOrders.filter(
+      (lo) => lo && !DUMMY_ORDER_IDS.has(lo.id),
     );
-    const nonDuplicatedLocal = localOrders.filter(
-      (lo) =>
-        !serverOrderNumbers.has(lo.id) &&
-        !serverOrderNumbers.has(lo.trackingCode),
+    return [...cleanLocal].sort(
+      (a, b) => getTime(b.createdAt) - getTime(a.createdAt),
     );
-
-    return [...mappedServerOrders, ...nonDuplicatedLocal];
   }, [isAuthenticated, user, mappedServerOrders, localOrders]);
 
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(

@@ -11,81 +11,13 @@ import type {
   SourcingResultItem,
 } from "@/types/product-request";
 
-const SEED_PRODUCT_REQUESTS: ProductRequestRecord[] = [
-  {
-    id: "REQ-202610-8812",
-    createdAt: "2026-10-09T09:30:00.000Z",
-    updatedAt: "2026-10-09T14:20:00.000Z",
-    userName: "Budi Santoso",
-    userPhone: "081288992211",
-    userEmail: "budi.santoso@gmail.com",
-    warehouseCode: "FP-SH-8821",
-    notificationPreference: "BOTH",
-    productName: "Mesin Heat Press Sablon DTF Portable 12x10 Inch",
-    category: "Elektronik & Gadget",
-    targetBudget: "Maksimal Rp 1.500.000 / unit",
-    targetQuantity: "2 unit",
-    specificationNotes:
-      "Tegangan 220V cocok untuk listrik Indonesia. Layar sentuh digital temperatur & timer.",
-    referenceLink:
-      "https://shopee.co.id/search?keyword=heat%20press%20portable",
-    status: "SOURCED",
-    adminNotes:
-      "Tim sourcing Shanghai telah menghubungi pabrik OEM di Zhejiang. Barang ready stock 220V standard colokan EU/Indo. Harga sangat hemat dibanding lokal.",
-    sourcingResults: [
-      {
-        id: "SRC-8812-1",
-        url: "https://detail.1688.com/offer/73291823901.html",
-        title: "Pabrik Zhejiang EasyPress Portable 12x10 Inch 220V",
-        platform: "1688",
-        priceCny: 380,
-        priceIdr: Math.round(380 * BRANDING.exchangeRate.cnyToIdr),
-        minOrder: "1 unit",
-        supplierName: "Zhejiang Printing Tech Co., Ltd.",
-        notes: "Rating pabrik 4.9/5, garansi komponen seller 1 tahun.",
-      },
-    ],
-  },
-  {
-    id: "REQ-202610-7734",
-    createdAt: "2026-10-09T11:15:00.000Z",
-    updatedAt: "2026-10-09T11:15:00.000Z",
-    userName: "Siti Rahmawati",
-    userPhone: "085712345678",
-    userEmail: "siti.rahma@gmail.com",
-    warehouseCode: "FP-SH-9142",
-    notificationPreference: "WHATSAPP",
-    productName: "Tumbler Termos Gradient Aesthetic 1000ml Stainless 316",
-    category: "Peralatan Rumah Tangga",
-    targetBudget: "Rp 35.000 / pcs",
-    targetQuantity: "100 pcs (Grosir Reseller)",
-    specificationNotes:
-      "Warna pastel gradasi (Matcha Green, Lilac, Rose Cream). Material stainless steel 316 food grade, tahan dingin 24 jam.",
-    status: "SOURCING_IN_PROGRESS",
-    adminNotes:
-      "Sedang negosiasi penawaran grosir MOQ 100 pcs langsung ke 2 pabrik termos di Yongkang.",
-    sourcingResults: [],
-  },
-  {
-    id: "REQ-202610-9102",
-    createdAt: "2026-10-10T07:45:00.000Z",
-    updatedAt: "2026-10-10T07:45:00.000Z",
-    userName: "Hendro Wijaya",
-    userPhone: "081900112233",
-    userEmail: "hendro.w@yahoo.com",
-    warehouseCode: "FP-SH-6320",
-    notificationPreference: "WHATSAPP",
-    productName: "Vintage Leather Varsity Jacket Washed Grey",
-    category: "Fashion & Pakaian",
-    targetBudget: "Maksimal ¥180",
-    targetQuantity: "1 pcs (Size XL)",
-    specificationNotes:
-      "Bahan kulit sintetis washed matte, bordir patch dada tebal, inner furing satin.",
-    status: "PENDING_SOURCING",
-    adminNotes: "Menunggu giliran pengecekan kurator fashion China.",
-    sourcingResults: [],
-  },
-];
+const DUMMY_REQUEST_IDS = new Set([
+  "REQ-202610-8812",
+  "REQ-202610-7734",
+  "REQ-202610-9102",
+]);
+
+const SEED_PRODUCT_REQUESTS: ProductRequestRecord[] = [];
 
 interface ProductRequestState {
   requests: ProductRequestRecord[];
@@ -223,6 +155,21 @@ export const useProductRequestStore = create<ProductRequestState>()(
     }),
     {
       name: "flypick-product-requests-store",
+      merge: (persistedState: unknown, currentState) => {
+        const persisted = persistedState as
+          | { requests?: ProductRequestRecord[] }
+          | undefined;
+        if (!persisted) return currentState;
+        const cleanRequests = Array.isArray(persisted.requests)
+          ? persisted.requests.filter(
+              (r) => r && !DUMMY_REQUEST_IDS.has(r.id),
+            )
+          : [];
+        return {
+          ...currentState,
+          requests: cleanRequests,
+        };
+      },
     },
   ),
 );

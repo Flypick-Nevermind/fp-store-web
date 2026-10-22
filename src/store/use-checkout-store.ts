@@ -69,103 +69,7 @@ const MOCK_QC_DATA: QcInspectionData = {
   },
 };
 
-const INITIAL_MOCK_ORDER: OrderRecord = {
-  id: "FP-ORD-882190",
-  trackingCode: "FP-CGK-771290",
-  createdAt: "2026-10-04T09:30:00Z",
-  serviceType: "CONSOLIDATED",
-  items: [
-    {
-      id: "FP-DEMO-01",
-      serviceType: "BUY_FOR_ME",
-      sourceUrl: "https://detail.tmall.com/item.htm?id=68192019",
-      productName: "Minimalist Canvas Tote Bag Japanese Design",
-      priceCny: 128.0,
-      exchangeRate: 2250,
-      priceIdr: 288000,
-      selectedVariant: { color: "Ecru Off-White", size: "Large" },
-      quantity: 1,
-      imageUrl:
-        "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&auto=format&fit=crop&q=60",
-    },
-  ],
-  deliveryAddress: DEFAULT_ADDRESS,
-  shippingMethod: "AIR_EXPRESS",
-  addOns: { photoQc: true, extraBubbleWrap: true },
-  stage1Amount: 313000,
-  stage1PaymentStatus: "PAID",
-  stage2EstimatedAmount: 189750, // 1.15kg * 165000
-  stage2ActualAmount: 189750,
-  stage2PaymentStatus: "PENDING", // Ready to be paid by user in Screen 4!
-  currentStage: "IN_TRANSIT_PVG_CGK",
-  qcData: MOCK_QC_DATA,
-  timeline: [
-    {
-      stage: "ORDER_PLACED",
-      title: "Order Placed (Pesanan Dibuat)",
-      description:
-        "Tiket pesanan dan pembayaran Tahap 1 terkonfirmasi di sistem FLYPICK.",
-      timestamp: "04 Okt 2026, 09:30 WIB",
-      location: "FLYPICK Intake Cloud",
-      isCompleted: true,
-    },
-    {
-      stage: "PURCHASED_INBOUND",
-      title: "Purchased / Inbound (Dalam Pembelian Merchant)",
-      description:
-        "Pesanan telah dicheckout ke merchant Taobao. Paket dalam perjalanan kurir domestik China ke Shanghai.",
-      timestamp: "04 Okt 2026, 14:15 WIB",
-      location: "Hangzhou / Domestic China",
-      isCompleted: true,
-    },
-    {
-      stage: "ARRIVED_CHINA_HUB",
-      title: "Arrived at China Hub (Tiba di Gudang Shanghai)",
-      description:
-        "Paket diterima di Pudong FTZ Hub (PVG-01). Penimbangan aktual: 1.15 kg. Photo QC unboxing selesai. Invoice Tahap 2 diterbitkan.",
-      timestamp: "05 Okt 2026, 11:20 WIB",
-      location: "Shanghai Pudong Hub (PVG-01)",
-      isCompleted: true,
-    },
-    {
-      stage: "IN_TRANSIT_PVG_CGK",
-      title: "In Transit PVG ➔ CGK (Penerbangan Kargo Udara)",
-      description:
-        "Paket telah dimuat ke penerbangan kargo Boeing 777F rute Shanghai (PVG) ke Jakarta (CGK). Menunggu pelunasan Tahap 2 untuk rilis langsung ke kurir.",
-      timestamp: "06 Okt 2026, 03:15 WIB",
-      location: "Airspace Cargo Flight",
-      isCompleted: false,
-      isCurrent: true,
-    },
-    {
-      stage: "CUSTOMS_CLEARANCE",
-      title: "Customs Clearance (Proses Bea Cukai Indonesia)",
-      description:
-        "Pemeriksaan dokumen impor kargo resmi & pelunasan pajak bea cukai di Bandara Soekarno-Hatta.",
-      timestamp: "Est. 07 Okt 2026",
-      location: "Soekarno-Hatta Int'l Airport (CGK)",
-      isCompleted: false,
-    },
-    {
-      stage: "DISPATCHED",
-      title: "Dispatched (Pengiriman Domestik Terjadwal)",
-      description:
-        "Paket diserahkan ke kurir ekspedisi lokal untuk diantar ke alamat rumah penerima.",
-      timestamp: "Est. 08 Okt 2026",
-      location: "Jakarta Sorting Center",
-      isCompleted: false,
-    },
-    {
-      stage: "DELIVERED",
-      title: "Delivered (Diterima Sobat FLYPICK)",
-      description:
-        "Paket berhasil sampai dan diserahterimakan di alamat tujuan Tebet, Jakarta Selatan.",
-      timestamp: "Est. 09 Okt 2026",
-      location: "Alamat Penerima",
-      isCompleted: false,
-    },
-  ],
-};
+const DUMMY_ORDER_IDS = new Set(["FP-ORD-882190"]);
 
 export const useCheckoutStore = create<CheckoutState>()(
   persist(
@@ -175,8 +79,8 @@ export const useCheckoutStore = create<CheckoutState>()(
       addOns: DEFAULT_ADDONS,
       paymentStatus: "IDLE",
       deliveryAddress: DEFAULT_ADDRESS,
-      orders: [INITIAL_MOCK_ORDER],
-      currentOrderId: INITIAL_MOCK_ORDER.id,
+      orders: [],
+      currentOrderId: null,
 
       setActiveStep: (step) => set({ activeStep: step }),
       setShippingMethod: (shippingMethod) => set({ shippingMethod }),
@@ -362,6 +266,29 @@ export const useCheckoutStore = create<CheckoutState>()(
     }),
     {
       name: "flypick-checkout-storage",
+      merge: (persistedState: unknown, currentState) => {
+        const persisted = persistedState as Partial<CheckoutState> | undefined;
+        if (!persisted) return currentState;
+        const cleanOrders = Array.isArray(persisted.orders)
+          ? persisted.orders.filter(
+              (ord) =>
+                ord &&
+                !DUMMY_ORDER_IDS.has(ord.id) &&
+                ord.id !== "FP-ORD-882190",
+            )
+          : [];
+        return {
+          ...currentState,
+          ...persisted,
+          orders: cleanOrders,
+          currentOrderId:
+            persisted.currentOrderId &&
+            !DUMMY_ORDER_IDS.has(persisted.currentOrderId) &&
+            persisted.currentOrderId !== "FP-ORD-882190"
+              ? persisted.currentOrderId
+              : cleanOrders[0]?.id || null,
+        };
+      },
     },
   ),
 );

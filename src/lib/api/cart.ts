@@ -18,20 +18,41 @@ const API_BASE_URL =
  * Resolve an image value into a fully qualified image URL.
  * Supports absolute URLs, base64 data URIs, and backend S3 Wasabi object keys via /api/v1/images/media/{key}.
  */
-export function resolveCartImageUrl(image?: string): string {
+export function resolveCartImageUrl(image?: unknown): string {
   if (!image) {
     return "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80";
   }
 
+  let raw = "";
+  if (typeof image === "string") {
+    raw = image.trim();
+  } else if (typeof image === "object" && image !== null) {
+    const obj = image as Record<string, unknown>;
+    raw =
+      (typeof obj.cart_image_value === "string" && obj.cart_image_value) ||
+      (typeof obj.url === "string" && obj.url) ||
+      (typeof obj.file_url === "string" && obj.file_url) ||
+      (typeof obj.object_key === "string" && obj.object_key) ||
+      "";
+  }
+
+  if (!raw) {
+    return "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80";
+  }
+
   // Already an absolute URL or data URI
-  if (/^(?:https?:\/\/|data:image\/)/i.test(image)) {
-    return image;
+  if (/^(?:https?:\/\/|data:image\/)/i.test(raw)) {
+    return raw;
   }
 
   // Strip leading slashes
-  const cleanKey = image.replace(/^\/+/, "");
+  const cleanKey = raw.replace(/^\/+/, "");
 
   if (cleanKey.startsWith("api/v1/images/media/")) {
+    return `${API_BASE_URL}/${cleanKey}`;
+  }
+
+  if (cleanKey.startsWith("api-admin/v1/images/media/")) {
     return `${API_BASE_URL}/${cleanKey}`;
   }
 
@@ -43,19 +64,32 @@ export function resolveCartImageUrl(image?: string): string {
 }
 
 export function extractCartImageUrl(
-  images?: (CartImageItem | string)[],
+  images?: (CartImageItem | string)[] | unknown,
 ): string {
-  if (!images || images.length === 0) {
+  if (!images) {
     return "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80";
   }
-  const first = images[0];
-  let raw = "";
-  if (typeof first === "string") {
-    raw = first;
-  } else if (first && typeof first === "object") {
-    raw = first.cart_image_value || "";
+
+  let list: unknown[] = [];
+  if (Array.isArray(images)) {
+    list = images;
+  } else if (typeof images === "string") {
+    try {
+      const parsed = JSON.parse(images);
+      if (Array.isArray(parsed)) list = parsed;
+      else list = [images];
+    } catch {
+      list = [images];
+    }
+  } else if (typeof images === "object") {
+    list = [images];
   }
-  return resolveCartImageUrl(raw);
+
+  if (list.length === 0) {
+    return "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80";
+  }
+
+  return resolveCartImageUrl(list[0]);
 }
 
 export function parsePrice(priceString?: string): {

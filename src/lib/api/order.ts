@@ -5,6 +5,7 @@ import type {
   DeliveryAddress,
   OrderOperationalStage,
   OrderRecord,
+  ShippingMethod,
   StagePaymentStatus,
   TimelineEvent,
 } from "@/types";
@@ -12,6 +13,7 @@ import type {
   CheckoutRequest,
   CheckoutResponseData,
   OrderWithDetails,
+  VerifyOrderPaymentPayload,
 } from "@/types/api";
 
 /**
@@ -58,6 +60,25 @@ export async function getUserOrdersApi(
 }
 
 /**
+ * Finance Admin: Verify customer payment transfer receipt
+ * Calls PATCH /api/v1/admin/orders/:id/verify-payment
+ */
+export async function verifyOrderPaymentApi(
+  orderId: string,
+  payload: VerifyOrderPaymentPayload,
+  token?: string,
+): Promise<OrderWithDetails> {
+  return apiClient<OrderWithDetails>(
+    `/api/v1/admin/orders/${orderId}/verify-payment`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+      token,
+    },
+  );
+}
+
+/**
  * Map backend order payload to frontend OrderRecord format for timeline & tracking views
  */
 export function mapBackendOrderToOrderRecord(
@@ -66,7 +87,8 @@ export function mapBackendOrderToOrderRecord(
   const statusUpper = (order.order_status || "").toUpperCase();
   const paymentStatusUpper = (order.payment_status || "").toUpperCase();
 
-  const isPaid = paymentStatusUpper === "PAID" || statusUpper !== "WAITING_PAYMENT";
+  const isPaid =
+    paymentStatusUpper === "PAID" || statusUpper !== "WAITING_PAYMENT";
   const stage1PaymentStatus: StagePaymentStatus = isPaid ? "PAID" : "PENDING";
 
   let currentStage: OrderOperationalStage = "ORDER_PLACED";
@@ -121,7 +143,8 @@ export function mapBackendOrderToOrderRecord(
       title: "Purchased / Inbound (Dalam Pembelian Merchant)",
       description:
         "Tim buyer Shanghai menghubungi seller dan memproses pembelian barang ke gudang hub.",
-      timestamp: currentStageIdx >= 1 ? "Diproses" : "Menunggu Verifikasi Pembayaran",
+      timestamp:
+        currentStageIdx >= 1 ? "Diproses" : "Menunggu Verifikasi Pembayaran",
       location: "China Domestic Lane",
       isCompleted: currentStageIdx >= 1,
       isCurrent: currentStageIdx === 1,
@@ -131,7 +154,8 @@ export function mapBackendOrderToOrderRecord(
       title: "Arrived at China Hub (Tiba di Gudang Shanghai)",
       description:
         "Barang tiba di Shanghai Hub (PVG-01). Dilakukan unboxing, penimbangan aktual, dan Photo QC.",
-      timestamp: currentStageIdx >= 2 ? "Selesai Inspeksi" : "Menunggu Kedatangan",
+      timestamp:
+        currentStageIdx >= 2 ? "Selesai Inspeksi" : "Menunggu Kedatangan",
       location: "Shanghai Pudong Hub (PVG-01)",
       isCompleted: currentStageIdx >= 2,
       isCurrent: currentStageIdx === 2,
@@ -141,7 +165,8 @@ export function mapBackendOrderToOrderRecord(
       title: "In Transit PVG ➔ CGK (Penerbangan Kargo Udara)",
       description:
         "Paket dimuat ke penerbangan kargo internasional rute Shanghai (PVG) ke Bandara Soekarno-Hatta (CGK).",
-      timestamp: currentStageIdx >= 3 ? "Sedang Terbang" : "Menunggu Jadwal Penerbangan",
+      timestamp:
+        currentStageIdx >= 3 ? "Sedang Terbang" : "Menunggu Jadwal Penerbangan",
       location: "Air Cargo Lane",
       isCompleted: currentStageIdx >= 3,
       isCurrent: currentStageIdx === 3,
@@ -151,7 +176,8 @@ export function mapBackendOrderToOrderRecord(
       title: "Customs Clearance (Proses Bea Cukai Indonesia)",
       description:
         "Pemeriksaan dokumen impor resmi & kepabeanan kargo di Bandara Soekarno-Hatta.",
-      timestamp: currentStageIdx >= 4 ? "Selesai Clearance" : "Menunggu Kedatangan CGK",
+      timestamp:
+        currentStageIdx >= 4 ? "Selesai Clearance" : "Menunggu Kedatangan CGK",
       location: "Jakarta Gateway (CGK-01)",
       isCompleted: currentStageIdx >= 4,
       isCurrent: currentStageIdx === 4,
@@ -160,7 +186,8 @@ export function mapBackendOrderToOrderRecord(
       stage: "DISPATCHED",
       title: "Dispatched (Pengiriman Domestik Terjadwal)",
       description: `Paket diserahkan ke kurir lokal untuk diantar ke alamat ${order.shipping_city || "tujuan"}.`,
-      timestamp: currentStageIdx >= 5 ? "Dalam Pengantaran" : "Menunggu Rilis Kargo",
+      timestamp:
+        currentStageIdx >= 5 ? "Dalam Pengantaran" : "Menunggu Rilis Kargo",
       location: "Jakarta Sorting Center",
       isCompleted: currentStageIdx >= 5,
       isCurrent: currentStageIdx === 5,
@@ -204,6 +231,15 @@ export function mapBackendOrderToOrderRecord(
     postalCode: order.shipping_postal_code || "",
   };
 
+  // Determine shipping method dynamically
+  let shippingMethod: ShippingMethod = "AIR_EXPRESS";
+  const rawShipType = (order.shipping_service_type || "").toUpperCase();
+  if (rawShipType.includes("HANDCARRY")) {
+    shippingMethod = "HANDCARRY";
+  } else if (rawShipType.includes("SEA")) {
+    shippingMethod = "SEA_ECONOMY";
+  }
+
   return {
     id: order.order_number || order.order_id,
     trackingCode: order.order_number,
@@ -211,7 +247,7 @@ export function mapBackendOrderToOrderRecord(
     serviceType: "BUY_FOR_ME",
     items,
     deliveryAddress,
-    shippingMethod: "AIR_EXPRESS",
+    shippingMethod,
     addOns: { photoQc: true, extraBubbleWrap: true },
     stage1Amount: order.total_amount,
     stage1PaymentStatus,
@@ -220,5 +256,10 @@ export function mapBackendOrderToOrderRecord(
     stage2PaymentStatus: isPaid ? "PAID" : "PENDING",
     currentStage,
     timeline,
+    paymentProofUrl: order.payment_proof_url ? resolveCartImageUrl(order.payment_proof_url) : undefined,
+    actualWeightKg: order.actual_weight_kg,
+    airWaybillNo: order.air_waybill_no,
+    domesticCourier: order.domestic_courier,
+    domesticTrackingNo: order.domestic_tracking_no,
   };
 }

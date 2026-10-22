@@ -19,6 +19,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Badge } from "@/components/atoms";
 import { useCheckoutMutation } from "@/hooks/use-order-api";
+import { uploadImageApi } from "@/lib/api/image";
 import { formatApiErrorMessage } from "@/lib/api-client";
 import { formatIdr } from "@/lib/utils";
 import { useToast } from "@/providers/toast-provider";
@@ -71,8 +72,11 @@ export function PaymentModal({
   const clearCart = useCartStore((s) => s.clearCart);
   const createOrder = useCheckoutStore((s) => s.createOrder);
   const deliveryAddress = useCheckoutStore((s) => s.deliveryAddress);
+  const shippingMethod = useCheckoutStore((s) => s.shippingMethod);
+  const addOns = useCheckoutStore((s) => s.addOns);
 
   const user = useAuthStore((s) => s.user);
+  const token = useAuthStore((s) => s.token);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const openLoginModal = useAuthStore((s) => s.openLoginModal);
 
@@ -80,9 +84,11 @@ export function PaymentModal({
 
   const [selectedBank, setSelectedBank] = useState<"BCA" | "MANDIRI">("BCA");
   const [senderAccountName, setSenderAccountName] = useState("");
+  const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofImage, setProofImage] = useState<string | null>(null);
   const [copiedAccount, setCopiedAccount] = useState(false);
   const [copiedTotal, setCopiedTotal] = useState(false);
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
 
   const [isPaid, setIsPaid] = useState(false);
   const [createdOrderCode, setCreatedOrderCode] = useState<string>("");
@@ -121,6 +127,7 @@ export function PaymentModal({
       return;
     }
 
+    setProofFile(file);
     const reader = new FileReader();
     reader.onload = (event) => {
       setProofImage(event.target?.result as string);
@@ -147,7 +154,7 @@ export function PaymentModal({
       return;
     }
 
-    if (!proofImage) {
+    if (!proofImage && !proofFile) {
       toastError(
         "Bukti Transfer Diperlukan",
         "Silakan unggah foto/screenshot struk bukti transfer terlebih dahulu.",
@@ -168,6 +175,29 @@ export function PaymentModal({
     }
 
     try {
+      setIsUploadingProof(true);
+
+      // Upload proof image to server/S3 if file exists
+      let uploadedProofUrl = "";
+      if (proofFile) {
+        try {
+          const uploadRes = await uploadImageApi(proofFile, token || undefined);
+          if (uploadRes.url) {
+            uploadedProofUrl = uploadRes.url;
+          }
+        } catch (uploadErr) {
+          const errMsg =
+            uploadErr instanceof Error
+              ? uploadErr.message
+              : "Gagal mengunggah foto bukti pembayaran.";
+          toastError("Gagal Mengunggah Bukti", errMsg);
+          setIsUploadingProof(false);
+          return;
+        }
+      } else if (proofImage && !proofImage.startsWith("data:")) {
+        uploadedProofUrl = proofImage;
+      }
+
       const shippingNotes = `Transfer Manual ${currentBank.id} - A.N Pengirim: ${
         senderAccountName.trim() || "-"
       } - Bukti Terlampir`;
@@ -176,6 +206,9 @@ export function PaymentModal({
         items,
         deliveryAddress,
         paymentMethod: "MANUAL",
+        paymentProofUrl: uploadedProofUrl,
+        shippingServiceType: shippingMethod,
+        addOns,
         shippingNotes,
         userId: user.id,
       });
@@ -186,9 +219,6 @@ export function PaymentModal({
         `FP-ORD-${Math.floor(100000 + Math.random() * 900000)}`;
 
       setCreatedOrderCode(orderNumber);
-
-      // Record in local store for instant local cache
-      createOrder(items, stage1TotalIdr);
 
       // Clear the cart
       clearCart();
@@ -214,6 +244,8 @@ export function PaymentModal({
     } catch (err: unknown) {
       const errorMsg = formatApiErrorMessage(err);
       toastError("Checkout Gagal", errorMsg);
+    } finally {
+      setIsUploadingProof(false);
     }
   };
 
@@ -222,7 +254,7 @@ export function PaymentModal({
     router.push("/profile");
   };
 
-  const isPending = checkoutMutation.isPending;
+  const isPending = checkoutMutation.isPending || isUploadingProof;
 
   // Pre-filled WhatsApp confirmation URL
   const waMessage = encodeURIComponent(

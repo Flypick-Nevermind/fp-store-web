@@ -9,7 +9,7 @@ import {
   Package,
   Plane,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Barcode } from "@/components/ui/barcode";
 import { useStage2Payment } from "@/hooks/use-stage2-payment";
@@ -24,7 +24,30 @@ interface OrderTimelineProps {
 }
 
 export function OrderTimeline({ orders }: OrderTimelineProps) {
-  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  // Sort orders descending by checkout date (most recently checked out first)
+  const sortedOrders = useMemo(() => {
+    const getTime = (dateStr?: string) => {
+      if (!dateStr) return 0;
+      const t = new Date(dateStr).getTime();
+      return isNaN(t) ? 0 : t;
+    };
+    return [...orders].sort(
+      (a, b) => getTime(b.createdAt) - getTime(a.createdAt),
+    );
+  }, [orders]);
+
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(
+    sortedOrders[0]?.id || null,
+  );
+
+  useEffect(() => {
+    if (
+      sortedOrders.length > 0 &&
+      (!expandedOrderId || !sortedOrders.some((o) => o.id === expandedOrderId))
+    ) {
+      setExpandedOrderId(sortedOrders[0].id);
+    }
+  }, [sortedOrders, expandedOrderId]);
 
   const {
     activeOrder,
@@ -38,7 +61,7 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
     handleSimulatePayment,
   } = useStage2Payment();
 
-  if (orders.length === 0) {
+  if (sortedOrders.length === 0) {
     return (
       <div className="bg-white border-2 border-[#1A1A24] p-8 text-center space-y-3">
         <Package className="w-10 h-10 text-[#1A1A24]/40 mx-auto" />
@@ -55,7 +78,7 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
 
   return (
     <div className="space-y-8">
-      {orders.map((order) => {
+      {sortedOrders.map((order) => {
         const isExpanded = expandedOrderId === order.id;
         const isHandcarry = order.shippingMethod === "HANDCARRY";
 
@@ -87,7 +110,15 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
                   </div>
                   <p className="font-mono text-[11px] text-white/70">
                     ID Tiket: {order.id} | Dibuat:{" "}
-                    {order.createdAt.substring(0, 10)}
+                    {order.createdAt
+                      ? new Date(order.createdAt).toLocaleDateString("id-ID", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "Baru saja"}
                   </p>
                 </div>
               </div>
@@ -306,6 +337,82 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
                           {order.deliveryAddress.postalCode}
                         </p>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Payment Proof & Logistics Info Box */}
+                  <div className="p-3 bg-[#FAF8F5] border-2 border-[#1A1A24] grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-1.5 font-bold text-[#1A1A24]">
+                        <Clock className="w-3.5 h-3.5 text-[#2323FF]" />
+                        <span>STATUS BUKTI TRANSFER & MUTASI:</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {order.stage1PaymentStatus === "PAID" ? (
+                          <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-400 font-bold text-[10px]">
+                            LUNAS / DIVERIFIKASI FINANCE
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-300 font-bold text-[10px] animate-pulse">
+                            MENUNGGU VERIFIKASI ADMIN FINANCE
+                          </span>
+                        )}
+                        {order.paymentProofUrl && (
+                          <a
+                            href={order.paymentProofUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#2323FF] hover:underline text-[10px] font-bold"
+                          >
+                            [Lihat Struk ↗]
+                          </a>
+                        )}
+                      </div>
+                      {order.paymentProofUrl && (
+                        <div className="mt-2">
+                          <a
+                            href={order.paymentProofUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group block relative overflow-hidden rounded-lg border border-slate-300 hover:border-[#2323FF] max-w-[130px] transition-all shadow-xs"
+                          >
+                            <img
+                              src={order.paymentProofUrl}
+                              alt="Bukti Transfer"
+                              className="w-full h-16 object-cover group-hover:scale-105 transition-transform"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = "none";
+                              }}
+                            />
+                            <span className="block text-center text-[9px] text-[#2323FF] font-semibold py-0.5 bg-white/90">
+                              Buka Struk ↗
+                            </span>
+                          </a>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-1 sm:text-right">
+                      <p className="text-[10px] text-[#1A1A24]/60">
+                        MODA LOGISTIK:{" "}
+                        <strong className="text-[#2323FF]">
+                          {order.shippingMethod}
+                        </strong>
+                      </p>
+                      {order.airWaybillNo && (
+                        <p className="text-[10px] text-[#1A1A24]/80">
+                          AWB PVG➔CGK: <strong>{order.airWaybillNo}</strong>
+                        </p>
+                      )}
+                      {order.domesticTrackingNo && (
+                        <p className="text-[10px] text-[#1A1A24]/80">
+                          KURIR DOMESTIK:{" "}
+                          <strong>
+                            {order.domesticCourier || "JNE"} (
+                            {order.domesticTrackingNo})
+                          </strong>
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>

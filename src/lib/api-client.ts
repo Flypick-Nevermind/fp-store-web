@@ -127,7 +127,9 @@ export async function apiClient<T>(
   }
 
   const finalHeaders = new Headers(headers);
-  if (!finalHeaders.has("Content-Type")) {
+  const isFormData =
+    typeof FormData !== "undefined" && rest.body instanceof FormData;
+  if (!finalHeaders.has("Content-Type") && !isFormData) {
     finalHeaders.set("Content-Type", "application/json");
   }
   if (authToken && !finalHeaders.has("Authorization")) {

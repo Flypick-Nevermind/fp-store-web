@@ -26,6 +26,12 @@ interface CheckoutMutationVariables {
   items: CartItem[];
   deliveryAddress: DeliveryAddress;
   paymentMethod: "BANK_TRANSFER" | "QRIS" | "MANUAL" | string;
+  paymentProofUrl?: string;
+  shippingServiceType?: string;
+  addOns?: {
+    photoQc?: boolean;
+    extraBubbleWrap?: boolean;
+  };
   shippingNotes?: string;
   userId?: string;
 }
@@ -82,6 +88,17 @@ export function useCheckoutMutation() {
       const addressParts = [fullStreet, district, province].filter(Boolean);
       const fullShippingAddress = addressParts.join(", ");
 
+      // Backwards-compatible shipping notes appending proof url and shipping method
+      const metaTags = [
+        vars.shippingNotes,
+        vars.shippingServiceType
+          ? `[METODE_PENGIRIMAN: ${vars.shippingServiceType}]`
+          : "",
+        vars.paymentProofUrl ? `[BUKTI_TRANSFER: ${vars.paymentProofUrl}]` : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+
       const payload: CheckoutRequest = {
         user_id: activeUserId,
         items: checkoutItems,
@@ -91,9 +108,17 @@ export function useCheckoutMutation() {
           shipping_address: fullShippingAddress,
           shipping_city: addr.city.trim(),
           shipping_postal_code: addr.postalCode?.trim() || undefined,
-          shipping_notes: vars.shippingNotes?.trim() || undefined,
+          shipping_notes: metaTags || undefined,
         },
         payment_method: vars.paymentMethod,
+        payment_proof_url: vars.paymentProofUrl,
+        shipping_service_type: vars.shippingServiceType,
+        add_ons: vars.addOns
+          ? {
+              photo_qc: vars.addOns.photoQc,
+              extra_bubble_wrap: vars.addOns.extraBubbleWrap,
+            }
+          : undefined,
       };
 
       const result = await checkoutOrderApi(payload, token || undefined);
@@ -107,6 +132,49 @@ export function useCheckoutMutation() {
         });
         queryClient.invalidateQueries({
           queryKey: ["user-carts", activeUserId],
+        });
+      }
+    },
+  });
+}
+
+/**
+ * Hook to verify order payment by Finance Admin
+ */
+export function useVerifyOrderPaymentMutation() {
+  const queryClient = useQueryClient();
+  const token = useAuthStore((s) => s.token);
+
+  return useMutation({
+    mutationFn: async ({
+      orderId,
+      paymentStatus = "PAID",
+      orderStatus = "PROCESSING",
+      verificationNotes,
+    }: {
+      orderId: string;
+      paymentStatus?: string;
+      orderStatus?: string;
+      verificationNotes?: string;
+    }) => {
+      const { verifyOrderPaymentApi } = await import("@/lib/api/order");
+      return verifyOrderPaymentApi(
+        orderId,
+        {
+          payment_status: paymentStatus,
+          order_status: orderStatus,
+          verification_notes: verificationNotes,
+        },
+        token || undefined,
+      );
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: ["user-orders"],
+      });
+      if (data?.order_id) {
+        queryClient.invalidateQueries({
+          queryKey: ["order-detail", data.order_id],
         });
       }
     },
