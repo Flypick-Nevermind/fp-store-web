@@ -138,7 +138,9 @@ export async function apiClient<T>(
 
   const url = endpoint.startsWith("http")
     ? endpoint
-    : `${API_BASE_URL}${endpoint}`;
+    : typeof window !== "undefined" && endpoint.startsWith("/api/")
+      ? endpoint
+      : `${API_BASE_URL}${endpoint}`;
 
   const response = await fetch(url, {
     ...rest,
