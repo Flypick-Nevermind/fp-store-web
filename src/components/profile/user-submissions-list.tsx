@@ -15,7 +15,6 @@ import {
   XCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useUserCartsQuery } from "@/hooks/use-cart-api";
 import { useExchangeRateQuery } from "@/hooks/use-exchange-rate";
@@ -50,7 +49,6 @@ function extractDomain(url: string): string {
 }
 
 export function UserSubmissionsList() {
-  const router = useRouter();
   const { success, info } = useToast();
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -118,9 +116,8 @@ export function UserSubmissionsList() {
     addItem(cartItem);
     success(
       "Barang Masuk Keranjang!",
-      `${cartItem.productName} berhasil ditambahkan ke keranjang belanja.`,
+      `${cartItem.productName} ditambahkan. Anda dapat lanjut memilih produk lain atau membuka Keranjang.`,
     );
-    router.push("/cart");
   };
 
   // Filter carts by search query and sort by newest first (created_at DESC)
@@ -475,19 +472,32 @@ export function UserSubmissionsList() {
                       <span>Cari Alternatif</span>
                     </a>
                   ) : isValidated ? (
-                    <button
-                      type="button"
-                      onClick={() => handleAddToCart(cart)}
-                      className={cn(
-                        "px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer",
-                        isInCart
-                          ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                          : "bg-[#1035D0] hover:bg-[#0A2699] text-white",
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
+                      <button
+                        type="button"
+                        onClick={() => handleAddToCart(cart)}
+                        className={cn(
+                          "px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer",
+                          isInCart
+                            ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                            : "bg-[#1035D0] hover:bg-[#0A2699] text-white",
+                        )}
+                      >
+                        <ShoppingCart className="w-3.5 h-3.5 text-[#00F0FF]" />
+                        <span>
+                          {isInCart ? "Tambah Lagi (+1)" : "+ Keranjang"}
+                        </span>
+                      </button>
+                      {isInCart && (
+                        <Link
+                          href="/cart"
+                          className="px-3 py-2 rounded-xl text-xs font-bold bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#1035D0] border border-[#BFDBFE] inline-flex items-center gap-1 transition-colors"
+                        >
+                          <span>Lihat Keranjang</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
                       )}
-                    >
-                      <ShoppingCart className="w-3.5 h-3.5 text-[#00F0FF]" />
-                      <span>{isInCart ? "Tambah Lagi" : "+ Beli Sekarang"}</span>
-                    </button>
+                    </div>
                   ) : (
                     <a
                       href={`https://wa.me/6281299887766?text=${encodeURIComponent(
@@ -505,6 +515,28 @@ export function UserSubmissionsList() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* ── Sticky Cart Action Bar when user has items in cart ────── */}
+      {cartItems.length > 0 && (
+        <div className="sticky bottom-4 z-20 bg-[#0F172A] text-white rounded-2xl p-3.5 sm:px-5 shadow-[0_14px_30px_-8px_rgba(15,23,42,0.45)] border border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 text-xs sm:text-sm">
+            <span className="w-7 h-7 rounded-lg bg-[#1035D0] flex items-center justify-center shrink-0">
+              <ShoppingCart className="w-4 h-4 text-[#00F0FF]" />
+            </span>
+            <span>
+              <strong>{cartItems.length}</strong> produk sudah masuk ke
+              keranjang. Anda masih bisa menambahkan produk tervalidasi lainnya.
+            </span>
+          </div>
+          <Link
+            href="/cart"
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#00F0FF] hover:bg-[#00D8E6] text-[#0F172A] text-xs font-black transition-colors shrink-0"
+          >
+            <span>Lanjut ke Keranjang</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
       )}
     </div>

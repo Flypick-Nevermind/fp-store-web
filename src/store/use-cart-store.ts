@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { BRANDING } from "@/config/branding";
 import type { BuyForMeItem, CartItem } from "@/types";
 
 interface CartState {
@@ -110,20 +109,7 @@ export const useCartStore = create<CartState>()(
         }, 0);
       },
 
-      getServiceFeeIdr: () => {
-        const { items } = get();
-        // Handling fee per item line
-        const buyForMeCount = items.filter(
-          (i) => i.serviceType === "BUY_FOR_ME",
-        ).length;
-        const forwardingCount = items.filter(
-          (i) => i.serviceType === "FORWARDING",
-        ).length;
-        return (
-          buyForMeCount * BRANDING.serviceFees.handlingFeeIdr +
-          forwardingCount * 10000
-        );
-      },
+      getServiceFeeIdr: () => 0,
 
       getItemCount: () => {
         const { items } = get();

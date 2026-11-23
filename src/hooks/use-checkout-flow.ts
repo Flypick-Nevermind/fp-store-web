@@ -14,7 +14,6 @@ export function useCheckoutFlow() {
   const setDeliveryAddress = useCheckoutStore((s) => s.setDeliveryAddress);
   const shippingMethod = useCheckoutStore((s) => s.shippingMethod);
   const setShippingMethod = useCheckoutStore((s) => s.setShippingMethod);
-  const addOns = useCheckoutStore((s) => s.addOns);
   const setAddOns = useCheckoutStore((s) => s.setAddOns);
 
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -22,31 +21,32 @@ export function useCheckoutFlow() {
   // Total quantity across all links
   const totalItemCount = items.reduce((acc, it) => acc + (it.quantity || 1), 0);
 
-  // Subtotals & Fee calculations
+  // Subtotals & Fee calculations (Add-ons disabled for end-to-end focus)
   const subtotalIdr = getSubtotalIdr();
   const serviceFeeIdr = getServiceFeeIdr();
-  const photoQcFee = addOns.photoQc ? BRANDING.serviceFees.photoQcIdr : 0;
-  const bubbleWrapFee = addOns.extraBubbleWrap
-    ? BRANDING.serviceFees.extraBubbleWrapIdr
-    : 0;
-  const addOnsTotal = photoQcFee + bubbleWrapFee;
+  const addOns = { photoQc: false, extraBubbleWrap: false };
+  const photoQcFee = 0;
+  const bubbleWrapFee = 0;
+  const addOnsTotal = 0;
 
-  // Shipping Fee calculation (Cargo vs Handcarry)
+  // Shipping Fee reference (Cargo vs Handcarry)
   const isHandcarry = shippingMethod === "HANDCARRY";
   const handcarryRatePerItem = BRANDING.shippingRates.handcarry.ratePerItem;
   const handcarryShippingFee = totalItemCount * handcarryRatePerItem;
 
-  // Cargo estimated freight
+  // Cargo estimated freight (indicative only, billed at Stage 2 upon arrival in Indonesia)
   const cargoRatePerKg = BRANDING.shippingRates.cargo.ratePerKg;
   const estimatedWeightKg = 1.5;
   const cargoEstimatedStage2 = Math.round(cargoRatePerKg * estimatedWeightKg);
 
-  // 1x Pembayaran Saja (All-In):
-  // Seluruh biaya (harga barang, fee talangan, proteksi, & ongkir kargo/handcarry)
-  // dibayarkan 1 kali di awal (Single Payment).
-  const shippingFee = isHandcarry ? handcarryShippingFee : cargoEstimatedStage2;
-  const grandTotalAllIn =
-    subtotalIdr + serviceFeeIdr + addOnsTotal + shippingFee;
+  // Flow 2 Tahap:
+  // Tahap 1 (Saat Checkout): Customer membayar harga barang + service fee + add-ons agar barang dibelikan.
+  // Tahap 2 (Saat Tiba di Indonesia): Biaya ongkir aktual ditagihkan terpisah ke customer.
+  const stage1ShippingFee = 0;
+  const grandTotalStage1 = subtotalIdr + serviceFeeIdr + addOnsTotal;
+  const estimatedStage2 = isHandcarry
+    ? handcarryShippingFee
+    : cargoEstimatedStage2;
 
   return {
     items,
@@ -65,11 +65,11 @@ export function useCheckoutFlow() {
     isHandcarry,
     handcarryShippingFee,
     cargoEstimatedStage2,
-    shippingFee,
-    stage1ShippingFee: shippingFee,
-    grandTotalStage1: grandTotalAllIn,
-    grandTotalAllIn,
-    estimatedStage2: 0,
+    shippingFee: stage1ShippingFee,
+    stage1ShippingFee,
+    grandTotalStage1,
+    grandTotalAllIn: grandTotalStage1,
+    estimatedStage2,
     isPaymentModalOpen,
     openPaymentModal: () => setIsPaymentModalOpen(true),
     closePaymentModal: () => setIsPaymentModalOpen(false),

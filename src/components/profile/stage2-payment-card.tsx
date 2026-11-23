@@ -65,33 +65,33 @@ export function Stage2PaymentCard({ order }: Stage2PaymentCardProps) {
     );
   }
 
-  // 2. Already Verified & Paid (All-In Guarantee)
+  // 2. Stage 1 Verified & Paid (Product Price)
   return (
     <div className="bg-gradient-to-r from-[#ECFDF5] to-white border-2 border-emerald-300 p-4 sm:p-5 rounded-2xl shadow-[0_8px_20px_rgb(0,0,0,0.04)] relative overflow-hidden">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1.5">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="font-mono text-xs font-black uppercase text-emerald-800 tracking-wide">
-              STATUS BIAYA: LUNAS ALL-IN (1X BAYAR)
+              STATUS BIAYA: TAHAP 1 LUNAS (HARGA PRODUK)
             </span>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-              LUNAS / VERIFIED
+              TAHAP 1 VERIFIED
             </span>
           </div>
           <p className="text-xs text-slate-600 max-w-xl leading-relaxed">
-            Seluruh biaya talangan produk, proteksi pengiriman, dan ongkir internasional
-            telah lunas dibayar 1x di awal (Total:{" "}
+            Pembayaran harga produk Tahap 1 telah diverifikasi lunas (Total:{" "}
             <strong className="font-mono text-emerald-700">
               {formatIdr(order.stage1Amount)}
             </strong>
-            ). Tidak ada tagihan susulan saat barang tiba di Indonesia.
+            ). Biaya ongkos kirim Tahap 2 akan ditagihkan saat barang tiba di
+            Indonesia dan siap dikirim ke alamat kamu.
           </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
           <span className="px-3 py-1.5 rounded-xl border border-emerald-400 bg-white font-mono text-xs font-black text-emerald-700 flex items-center gap-1 shadow-2xs">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>ALL-IN PAID</span>
+            <span>TAHAP 1 PAID</span>
           </span>
         </div>
       </div>

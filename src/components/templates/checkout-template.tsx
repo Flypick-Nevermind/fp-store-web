@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ResultBiayaCard } from "@/components/checkout/result-biaya-card";
 import { ShippingTicketsSelector } from "@/components/checkout/shipping-tickets-selector";
 import { EmptyState } from "@/components/molecules";
-import { AddOnsStep, AddressStep, PaymentModal } from "@/components/organisms";
+import { AddressStep, PaymentModal } from "@/components/organisms";
 import { useCheckoutFlow } from "@/hooks/use-checkout-flow";
 
 export function CheckoutTemplate() {
@@ -65,8 +65,8 @@ export function CheckoutTemplate() {
             Checkout &amp; Pemilihan Jasa Pengiriman
           </h1>
           <p className="text-xs text-[#64748B] mt-0.5">
-            Pilih tiket penerbangan (Cargo vs Handcarry) dan konfirmasi alamat
-            penerima.
+            Pilih jalur pengiriman (Cargo vs Handcarry), konfirmasi alamat
+            penerima, lalu selesaikan pembayaran Tahap 1 (harga barang).
           </p>
         </div>
 
@@ -103,11 +103,6 @@ export function CheckoutTemplate() {
           {/* Card 2: Alamat Pengiriman ke Rumah */}
           <div className="bg-white rounded-2xl border border-[#DCE4EC] shadow-[0_12px_28px_-6px_rgba(16,53,208,0.08)] p-5 sm:p-6">
             <AddressStep onNext={() => {}} />
-          </div>
-
-          {/* Card 3: Layanan Proteksi Tambahan (Add-ons) */}
-          <div className="bg-white rounded-2xl border border-[#DCE4EC] shadow-[0_12px_28px_-6px_rgba(16,53,208,0.08)] p-5 sm:p-6">
-            <AddOnsStep />
           </div>
         </div>
 

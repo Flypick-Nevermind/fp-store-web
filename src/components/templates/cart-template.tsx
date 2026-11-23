@@ -55,6 +55,14 @@ export function CartTemplate() {
         {items.length > 0 && (
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <Link
+              href="/profile"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-bold transition-colors cursor-pointer"
+            >
+              <ShoppingBag className="w-4 h-4 text-emerald-600" />
+              <span>+ Pilih Produk Tervalidasi</span>
+            </Link>
+
+            <Link
               href="/"
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#1035D0] border border-[#BFDBFE] text-xs font-bold transition-colors cursor-pointer"
             >
@@ -111,13 +119,20 @@ export function CartTemplate() {
             </div>
 
             {/* Bottom Add Link Banner */}
-            <div className="pt-2">
+            <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Link
+                href="/profile"
+                className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-white hover:bg-emerald-50/50 border-2 border-dashed border-emerald-300 hover:border-emerald-500 rounded-2xl text-xs font-bold text-emerald-700 transition-colors cursor-pointer"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span>+ Pilih Produk Tervalidasi Lainnya</span>
+              </Link>
               <Link
                 href="/"
                 className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-white hover:bg-[#F8FAFC] border-2 border-dashed border-[#CBD5E1] hover:border-[#1035D0] rounded-2xl text-xs font-bold text-[#1035D0] transition-colors cursor-pointer"
               >
                 <PackagePlus className="w-4 h-4" />
-                <span>+ Tempel Link Tambahan ke Halaman Depan</span>
+                <span>+ Tempel Link Baru di Halaman Depan</span>
               </Link>
             </div>
           </div>

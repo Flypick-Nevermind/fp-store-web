@@ -1,4 +1,4 @@
-import { resolveCartImageUrl } from "@/lib/api/cart";
+import { parsePrice, resolveCartImageUrl } from "@/lib/api/cart";
 import { apiClient } from "@/lib/api-client";
 import { getActiveCnyToIdrRate } from "@/store/use-exchange-rate-store";
 import type {
@@ -204,23 +204,47 @@ export function mapBackendOrderToOrderRecord(
     },
   ];
 
-  const items: CartItem[] = (order.items || []).map((detail) => ({
-    id: detail.order_detail_id || detail.cart_id,
-    cartId: detail.cart_id,
-    serviceType: "BUY_FOR_ME",
-    sourceUrl: detail.product_url,
-    productName: detail.product_title || "Produk Import Marketplace China",
-    priceCny: 0,
-    exchangeRate: getActiveCnyToIdrRate(),
-    priceIdr: detail.product_price,
-    selectedVariant: {
-      color: "Default",
-      size: "Standard",
-    },
-    quantity: detail.quantity || 1,
-    imageUrl: resolveCartImageUrl(detail.product_image),
-    notes: detail.notes,
-  }));
+  const exchangeRate = getActiveCnyToIdrRate();
+
+  const items: CartItem[] = (order.items || []).map((detail) => {
+    const rawPrice = Number(detail.product_price) || 0;
+    const { priceCny, priceIdr } =
+      rawPrice > 0
+        ? parsePrice(String(rawPrice))
+        : { priceCny: 0, priceIdr: 0 };
+
+    const packagingOption: "NO_BOX" | "WITH_BOX" = detail.notes
+      ?.toUpperCase()
+      .includes("NO_BOX")
+      ? "NO_BOX"
+      : "WITH_BOX";
+
+    return {
+      id: detail.order_detail_id || detail.cart_id,
+      cartId: detail.cart_id,
+      serviceType: "BUY_FOR_ME",
+      sourceUrl: detail.product_url,
+      productName: detail.product_title || "Produk Import Marketplace China",
+      priceCny,
+      exchangeRate,
+      priceIdr,
+      selectedVariant: {
+        color: "Default",
+        size: "Standard",
+      },
+      quantity: detail.quantity || 1,
+      packagingOption,
+      imageUrl: resolveCartImageUrl(detail.product_image),
+      notes: detail.notes,
+    };
+  });
+
+  const itemsTotalIdr = items.reduce(
+    (sum, it) =>
+      sum + (it.serviceType === "BUY_FOR_ME" ? it.priceIdr * it.quantity : 0),
+    0,
+  );
+  const stage1Amount = itemsTotalIdr > 0 ? itemsTotalIdr : order.total_amount;
 
   const deliveryAddress: DeliveryAddress = {
     recipientName: order.recipient_name || "Penerima",
@@ -250,7 +274,7 @@ export function mapBackendOrderToOrderRecord(
     deliveryAddress,
     shippingMethod,
     addOns: { photoQc: true, extraBubbleWrap: true },
-    stage1Amount: order.total_amount,
+    stage1Amount,
     stage1PaymentStatus,
     stage2EstimatedAmount: 0,
     stage2ActualAmount: 0,

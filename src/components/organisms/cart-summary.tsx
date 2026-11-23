@@ -51,12 +51,14 @@ export function CartSummary() {
             </span>
           </div>
 
-          <div className="flex items-center justify-between">
-            <span className="text-[#64748B]">Handling &amp; Konsolidasi:</span>
-            <span className="font-mono font-bold text-[#0F172A]">
-              {formatIdr(serviceFeeIdr)}
-            </span>
-          </div>
+          {serviceFeeIdr > 0 && (
+            <div className="flex items-center justify-between">
+              <span className="text-[#64748B]">Handling &amp; Konsolidasi:</span>
+              <span className="font-mono font-bold text-[#0F172A]">
+                {formatIdr(serviceFeeIdr)}
+              </span>
+            </div>
+          )}
 
           {/* Packaging option summary */}
           <div className="pt-2 border-t border-[#F1F5F9] flex items-center justify-between text-[11px]">
@@ -82,7 +84,7 @@ export function CartSummary() {
                 Estimasi Tahap 1:
               </p>
               <p className="text-[11px] text-[#64748B]">
-                (Produk + Biaya Layanan)
+                (Total Harga Produk)
               </p>
             </div>
             <div className="text-right">

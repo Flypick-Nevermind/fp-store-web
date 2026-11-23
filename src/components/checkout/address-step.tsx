@@ -2,8 +2,8 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MapPin } from "lucide-react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { Button } from "@/components/ui/button";
 import {
   type DeliveryAddress,
   DeliveryAddressSchema,
@@ -11,7 +11,7 @@ import {
 import { useCheckoutStore } from "@/store/use-checkout-store";
 
 interface AddressStepProps {
-  onNext: () => void;
+  onNext?: () => void;
 }
 
 export function AddressStep({ onNext }: AddressStepProps) {
@@ -21,15 +21,32 @@ export function AddressStep({ onNext }: AddressStepProps) {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<DeliveryAddress>({
     resolver: zodResolver(DeliveryAddressSchema),
+    mode: "onChange",
     defaultValues: deliveryAddress,
   });
 
+  useEffect(() => {
+    const subscription = watch((values) => {
+      setDeliveryAddress({
+        recipientName: values.recipientName || "",
+        phone: values.phone || "",
+        province: values.province || "",
+        city: values.city || "",
+        district: values.district || "",
+        postalCode: values.postalCode || "",
+        streetAddress: values.streetAddress || "",
+      });
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, setDeliveryAddress]);
+
   const onSubmit = (data: DeliveryAddress) => {
     setDeliveryAddress(data);
-    onNext();
+    onNext?.();
   };
 
   return (
@@ -38,11 +55,10 @@ export function AddressStep({ onNext }: AddressStepProps) {
         <MapPin className="w-5 h-5 text-[#2323FF]" />
         <div>
           <h3 className="font-mono text-sm font-bold uppercase text-[#1A1A24]">
-            Langkah 1: Alamat Pengiriman Indonesia
+            Langkah 2: Alamat Pengiriman Indonesia
           </h3>
           <p className="text-xs text-[#1A1A24]/70">
-            Alamat tujuan akhir saat paket rilis dari bea cukai Bandara
-            Cengkareng (CGK).
+            Alamat tujuan pengiriman paket di Indonesia.
           </p>
         </div>
       </div>
@@ -59,12 +75,13 @@ export function AddressStep({ onNext }: AddressStepProps) {
           <input
             id="recipientNameInput"
             type="text"
-            placeholder="Nama lengkap sesuai KTP (untuk pengiriman)"
+            placeholder="Contoh: Budi Santoso (sesuai KTP)"
             {...register("recipientName")}
-            className="w-full px-3 py-2 bg-white border-2 border-[#1A1A24] font-sans text-xs focus:outline-none focus:border-[#2323FF]"
+            className="w-full px-3 py-2 bg-white border-2 border-[#1A1A24] font-sans text-xs placeholder:text-slate-400 focus:outline-none focus:border-[#2323FF]"
           />
           <p className="text-[10px] text-slate-500 font-sans">
-            Wajib diisi dengan nama lengkap penerima untuk keperluan pengiriman ekspedisi kargo.
+            Wajib diisi dengan nama lengkap penerima untuk keperluan pengiriman
+            ekspedisi di indonesia.
           </p>
           {errors.recipientName && (
             <p className="font-mono text-[11px] text-red-600">
@@ -85,9 +102,9 @@ export function AddressStep({ onNext }: AddressStepProps) {
           <input
             id="recipientPhoneInput"
             type="text"
-            placeholder="+6281299887766"
+            placeholder="Contoh: +6281234567890"
             {...register("phone")}
-            className="w-full px-3 py-2 bg-white border-2 border-[#1A1A24] font-mono text-xs focus:outline-none focus:border-[#2323FF]"
+            className="w-full px-3 py-2 bg-white border-2 border-[#1A1A24] font-mono text-xs placeholder:text-slate-400 focus:outline-none focus:border-[#2323FF]"
           />
           {errors.phone && (
             <p className="font-mono text-[11px] text-red-600">
@@ -109,9 +126,9 @@ export function AddressStep({ onNext }: AddressStepProps) {
           <input
             id="provinceInput"
             type="text"
-            placeholder="DKI Jakarta"
+            placeholder="Contoh: DKI Jakarta"
             {...register("province")}
-            className="w-full px-3 py-2 bg-white border-2 border-[#1A1A24] font-sans text-xs focus:outline-none focus:border-[#2323FF]"
+            className="w-full px-3 py-2 bg-white border-2 border-[#1A1A24] font-sans text-xs placeholder:text-slate-400 focus:outline-none focus:border-[#2323FF]"
           />
           {errors.province && (
             <p className="font-mono text-[11px] text-red-600">
@@ -131,9 +148,9 @@ export function AddressStep({ onNext }: AddressStepProps) {
           <input
             id="cityInput"
             type="text"
-            placeholder="Jakarta Selatan"
+            placeholder="Contoh: Jakarta Selatan"
             {...register("city")}
-            className="w-full px-3 py-2 bg-white border-2 border-[#1A1A24] font-sans text-xs focus:outline-none focus:border-[#2323FF]"
+            className="w-full px-3 py-2 bg-white border-2 border-[#1A1A24] font-sans text-xs placeholder:text-slate-400 focus:outline-none focus:border-[#2323FF]"
           />
           {errors.city && (
             <p className="font-mono text-[11px] text-red-600">
@@ -153,9 +170,9 @@ export function AddressStep({ onNext }: AddressStepProps) {
           <input
             id="districtInput"
             type="text"
-            placeholder="Tebet"
+            placeholder="Contoh: Tebet"
             {...register("district")}
-            className="w-full px-3 py-2 bg-white border-2 border-[#1A1A24] font-sans text-xs focus:outline-none focus:border-[#2323FF]"
+            className="w-full px-3 py-2 bg-white border-2 border-[#1A1A24] font-sans text-xs placeholder:text-slate-400 focus:outline-none focus:border-[#2323FF]"
           />
           {errors.district && (
             <p className="font-mono text-[11px] text-red-600">
@@ -178,9 +195,9 @@ export function AddressStep({ onNext }: AddressStepProps) {
             id="postalCodeInput"
             type="text"
             maxLength={5}
-            placeholder="12810"
+            placeholder="Contoh: 12810"
             {...register("postalCode")}
-            className="w-full px-3 py-2 bg-white border-2 border-[#1A1A24] font-mono text-xs focus:outline-none focus:border-[#2323FF]"
+            className="w-full px-3 py-2 bg-white border-2 border-[#1A1A24] font-mono text-xs placeholder:text-slate-400 focus:outline-none focus:border-[#2323FF]"
           />
           {errors.postalCode && (
             <p className="font-mono text-[11px] text-red-600">
@@ -201,9 +218,9 @@ export function AddressStep({ onNext }: AddressStepProps) {
           <input
             id="streetAddressInput"
             type="text"
-            placeholder="Jl. Tebet Timur Raya No. 42B, RT 04 / RW 07"
+            placeholder="Contoh: Jl. Tebet Timur Raya No. 42B, RT 04/RW 07, Sebelah Minimarket"
             {...register("streetAddress")}
-            className="w-full px-3 py-2 bg-white border-2 border-[#1A1A24] font-sans text-xs focus:outline-none focus:border-[#2323FF]"
+            className="w-full px-3 py-2 bg-white border-2 border-[#1A1A24] font-sans text-xs placeholder:text-slate-400 focus:outline-none focus:border-[#2323FF]"
           />
           {errors.streetAddress && (
             <p className="font-mono text-[11px] text-red-600">
@@ -211,12 +228,6 @@ export function AddressStep({ onNext }: AddressStepProps) {
             </p>
           )}
         </div>
-      </div>
-
-      <div className="pt-2 flex justify-end">
-        <Button type="submit" variant="neon" size="md">
-          SIMPAN & LANJUT KE JALUR FREIGHT ➔
-        </Button>
       </div>
     </form>
   );

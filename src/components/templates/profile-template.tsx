@@ -43,8 +43,13 @@ export function ProfileTemplate() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      if (params.get("tab") === "requests" || params.get("tab") === "request") {
+      const tab = params.get("tab")?.toLowerCase();
+      if (tab === "requests" || tab === "request") {
         setActiveTab("REQUESTS");
+      } else if (tab === "manifest" || tab === "tracking") {
+        setActiveTab("MANIFEST");
+      } else if (tab === "warehouse") {
+        setActiveTab("WAREHOUSE");
       }
     }
   }, []);

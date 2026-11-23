@@ -22,7 +22,7 @@ export const BRANDING = {
     cargo: {
       name: "Tiket Jasa Cargo",
       ratePerKg: 165000,
-      eta: "7-10 Hari Kerja",
+      eta: "14-28 Hari Kerja",
       minWeightKg: 0.5,
       carrier: "FLYPICK Air & Sea Cargo Hub",
       badge: "CARGO FREIGHT",
@@ -32,11 +32,11 @@ export const BRANDING = {
     handcarry: {
       name: "Tiket Jasa Handcarry",
       ratePerItem: 95000,
-      eta: "3-5 Hari Kerja",
+      eta: "7-10 Hari Kerja",
       carrier: "FLYPICK VIP Traveler Luggage",
       badge: "VIP HANDCARRY",
       description:
-        "Dibawa langsung dalam bagasi kabin traveler VIP. Super cepat, bebas antre pelabuhan kargo, tarif all-in Rp 95.000/pcs langsung di Tahap 1.",
+        "Dibawa langsung dalam bagasi kabin traveler VIP. Super cepat, bebas antre pelabuhan kargo, dan lebih cepat sampai ke Indonesia.",
     },
     airExpress: {
       ratePerKg: 165000,

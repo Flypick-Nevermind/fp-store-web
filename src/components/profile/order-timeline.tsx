@@ -104,9 +104,9 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
                     <span className="font-mono text-xs font-bold text-[#00F0FF]">
                       NO RESI: {order.trackingCode}
                     </span>
-                    <Badge variant={isHandcarry ? "electric" : "yellow"}>
-                      {isHandcarry ? "VIP HANDCARRY" : order.serviceType}
-                    </Badge>
+                    {isHandcarry && (
+                      <Badge variant="electric">VIP HANDCARRY</Badge>
+                    )}
                   </div>
                   <p className="font-mono text-[11px] text-white/70">
                     ID Tiket: {order.id} | Dibuat:{" "}
@@ -164,7 +164,7 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
                   )}
                 >
                   {order.stage1PaymentStatus === "PAID"
-                    ? "LUNAS (ALL-IN)"
+                    ? "TAHAP 1 LUNAS"
                     : "MENUNGGU VERIFIKASI"}
                 </span>
               </div>
@@ -294,7 +294,7 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
                               </p>
                               <div className="flex items-center gap-2 mt-0.5">
                                 <span className="text-[10px] text-[#1A1A24]/60">
-                                  {item.serviceType} x {item.quantity} pcs
+                                  Qty: {item.quantity} pcs
                                 </span>
                                 {item.packagingOption === "NO_BOX" ? (
                                   <span className="text-[9px] px-1.5 py-0.2 bg-emerald-100 text-emerald-800 border border-emerald-400 font-bold">
@@ -307,13 +307,59 @@ export function OrderTimeline({ orders }: OrderTimelineProps) {
                                 )}
                               </div>
                             </div>
-                            <span className="font-bold text-[#2323FF]">
-                              {item.serviceType === "BUY_FOR_ME"
-                                ? formatIdr(item.priceIdr * item.quantity)
-                                : "Forwarding"}
-                            </span>
+                            <div className="text-right shrink-0 ml-3">
+                              {item.serviceType === "BUY_FOR_ME" ? (
+                                <>
+                                  <span className="font-bold text-[#2323FF] block">
+                                    {formatIdr(item.priceIdr * item.quantity)}
+                                  </span>
+                                  {item.priceCny > 0 && (
+                                    <span className="text-[10px] text-[#1A1A24]/60 block">
+                                      ¥
+                                      {(item.priceCny * item.quantity).toLocaleString(
+                                        "id-ID",
+                                      )}{" "}
+                                      CNY
+                                    </span>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="font-bold text-[#2323FF]">
+                                  Forwarding
+                                </span>
+                              )}
+                            </div>
                           </div>
                         ))}
+                        <div className="p-2.5 bg-[#EFF6FF] border border-[#2323FF] font-mono text-xs flex justify-between items-center">
+                          <span className="font-bold text-[#1A1A24] uppercase">
+                            Total Harga Produk (Tahap 1)
+                          </span>
+                          <div className="text-right shrink-0 ml-3">
+                            <span className="font-black text-[#2323FF] block">
+                              {formatIdr(order.stage1Amount)}
+                            </span>
+                            {order.items.some(
+                              (i) =>
+                                i.serviceType === "BUY_FOR_ME" && i.priceCny > 0,
+                            ) && (
+                              <span className="text-[10px] text-[#1A1A24]/60 block">
+                                ¥
+                                {order.items
+                                  .reduce(
+                                    (sum, i) =>
+                                      sum +
+                                      (i.serviceType === "BUY_FOR_ME"
+                                        ? i.priceCny * i.quantity
+                                        : 0),
+                                    0,
+                                  )
+                                  .toLocaleString("id-ID")}{" "}
+                                CNY
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
 

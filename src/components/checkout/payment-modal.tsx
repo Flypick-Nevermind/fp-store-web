@@ -34,7 +34,7 @@ interface PaymentModalProps {
 }
 
 interface BankOption {
-  id: "BCA" | "MANDIRI";
+  id: "NEOBANK";
   name: string;
   accountNumber: string;
   accountName: string;
@@ -44,20 +44,12 @@ interface BankOption {
 
 const BANK_ACCOUNTS: BankOption[] = [
   {
-    id: "BCA",
-    name: "Bank Central Asia (BCA)",
-    accountNumber: "8801982177",
-    accountName: "PT FLYPICK INDONESIA REKSA",
-    logoText: "BCA",
-    bgBadge: "bg-blue-600 text-white",
-  },
-  {
-    id: "MANDIRI",
-    name: "Bank Mandiri",
-    accountNumber: "1370019821772",
-    accountName: "PT FLYPICK INDONESIA REKSA",
-    logoText: "MANDIRI",
-    bgBadge: "bg-amber-600 text-white",
+    id: "NEOBANK",
+    name: "Bank Neo Commerce (Neobank)",
+    accountNumber: "5859459298689539",
+    accountName: "ALDI NUGROHO",
+    logoText: "NEOBANK",
+    bgBadge: "bg-amber-500 text-slate-950",
   },
 ];
 
@@ -73,7 +65,6 @@ export function PaymentModal({
   const createOrder = useCheckoutStore((s) => s.createOrder);
   const deliveryAddress = useCheckoutStore((s) => s.deliveryAddress);
   const shippingMethod = useCheckoutStore((s) => s.shippingMethod);
-  const addOns = useCheckoutStore((s) => s.addOns);
 
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
@@ -82,7 +73,7 @@ export function PaymentModal({
 
   const checkoutMutation = useCheckoutMutation();
 
-  const [selectedBank, setSelectedBank] = useState<"BCA" | "MANDIRI">("BCA");
+  const [selectedBank, setSelectedBank] = useState<"NEOBANK">("NEOBANK");
   const [senderAccountName, setSenderAccountName] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofImage, setProofImage] = useState<string | null>(null);
@@ -154,6 +145,19 @@ export function PaymentModal({
       return;
     }
 
+    if (
+      !deliveryAddress.recipientName.trim() ||
+      !deliveryAddress.phone.trim() ||
+      !deliveryAddress.city.trim() ||
+      !deliveryAddress.streetAddress.trim()
+    ) {
+      toastError(
+        "Alamat Pengiriman Belum Lengkap",
+        "Mohon lengkapi nama penerima, nomor WhatsApp, kota, dan alamat lengkap terlebih dahulu.",
+      );
+      return;
+    }
+
     if (!proofImage && !proofFile) {
       toastError(
         "Bukti Transfer Diperlukan",
@@ -208,7 +212,7 @@ export function PaymentModal({
         paymentMethod: "MANUAL",
         paymentProofUrl: uploadedProofUrl,
         shippingServiceType: shippingMethod,
-        addOns,
+        addOns: { photoQc: false, extraBubbleWrap: false },
         shippingNotes,
         userId: user.id,
       });
@@ -239,8 +243,11 @@ export function PaymentModal({
 
       success(
         "Bukti Transfer Diterima!",
-        `Nomor Pesanan ${orderNumber} berhasil diterbitkan dan masuk antrean verifikasi finance admin.`,
+        `Nomor Pesanan ${orderNumber} berhasil diterbitkan. Mengarahkan ke halaman lacak pesanan...`,
       );
+
+      onClose();
+      router.push("/profile?tab=manifest");
     } catch (err: unknown) {
       const errorMsg = formatApiErrorMessage(err);
       toastError("Checkout Gagal", errorMsg);
@@ -251,7 +258,7 @@ export function PaymentModal({
 
   const handleGoToTracking = () => {
     onClose();
-    router.push("/profile");
+    router.push("/profile?tab=manifest");
   };
 
   const isPending = checkoutMutation.isPending || isUploadingProof;
@@ -278,10 +285,10 @@ export function PaymentModal({
             </div>
             <div>
               <h3 className="font-sans font-bold text-sm tracking-tight text-white uppercase">
-                Pembayaran Transfer Manual (1x Bayar)
+                Pembayaran Transfer Manual (Tahap 1)
               </h3>
               <p className="text-[11px] text-[#93C5FD]">
-                Rekening Resmi Flypick &amp; Verifikasi Bukti Struk
+                Pelunasan Harga Produk &amp; Verifikasi Bukti Struk
               </p>
             </div>
           </div>
@@ -304,7 +311,7 @@ export function PaymentModal({
               <div className="p-4 bg-[#EFF6FF] rounded-2xl border border-[#BFDBFE] flex items-center justify-between">
                 <div>
                   <span className="font-mono text-[11px] text-[#1E40AF] font-bold uppercase block">
-                    TOTAL TAGIHAN ALL-IN:
+                    TOTAL TAGIHAN TAHAP 1:
                   </span>
                   <p className="font-mono text-2xl font-black text-[#1035D0] mt-0.5">
                     {formatIdr(stage1TotalIdr)}
@@ -329,43 +336,47 @@ export function PaymentModal({
                 </button>
               </div>
 
-              {/* Bank Selector Tabs */}
-              <div className="space-y-2">
-                {/** biome-ignore lint/a11y/noLabelWithoutControl: <explanation> */}
-                <label className="text-xs font-bold text-slate-700 block">
-                  Pilih Rekening Tujuan Transfer:
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {BANK_ACCOUNTS.map((bank) => {
-                    const isSelected = selectedBank === bank.id;
-                    return (
-                      <button
-                        key={bank.id}
-                        type="button"
-                        onClick={() => setSelectedBank(bank.id)}
-                        disabled={isPending}
-                        className={`p-3 rounded-xl font-sans text-xs font-bold border-2 flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                          isSelected
-                            ? "bg-[#1035D0] text-white border-[#1035D0] shadow-sm"
-                            : "bg-[#F8FAFC] text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
-                        }`}
-                      >
-                        <Building2 className="w-4 h-4 text-[#00F0FF]" />
-                        <span>{bank.name}</span>
-                      </button>
-                    );
-                  })}
+              {/* Bank Selector Tabs (only shown when multiple banks exist) */}
+              {BANK_ACCOUNTS.length > 1 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-slate-700 block">
+                    Pilih Rekening Tujuan Transfer:
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {BANK_ACCOUNTS.map((bank) => {
+                      const isSelected = selectedBank === bank.id;
+                      return (
+                        <button
+                          key={bank.id}
+                          type="button"
+                          onClick={() => setSelectedBank(bank.id)}
+                          disabled={isPending}
+                          className={`p-3 rounded-xl font-sans text-xs font-bold border-2 flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                            isSelected
+                              ? "bg-[#1035D0] text-white border-[#1035D0] shadow-sm"
+                              : "bg-[#F8FAFC] text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
+                          }`}
+                        >
+                          <Building2 className="w-4 h-4 text-[#00F0FF]" />
+                          <span>{bank.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Bank Account Info Card */}
               <div className="p-4 bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0] space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-500">
-                    Nomor Rekening {currentBank.id}:
-                  </span>
-                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                    REKENING UTAMA
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-[#1035D0]" />
+                    <span className="text-xs font-bold text-slate-700">
+                      {currentBank.name}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 shrink-0">
+                    REKENING TUJUAN
                   </span>
                 </div>
 

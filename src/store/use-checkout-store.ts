@@ -34,18 +34,18 @@ interface CheckoutState {
 }
 
 const DEFAULT_ADDRESS: DeliveryAddress = {
-  recipientName: "Ahmad Fikri",
-  phone: "+6281299887766",
-  province: "DKI Jakarta",
-  city: "Jakarta Selatan",
-  district: "Tebet",
-  postalCode: "12810",
-  streetAddress: "Jl. Tebet Timur Dalam Raya No. 42B, RT 04 / RW 07",
+  recipientName: "",
+  phone: "",
+  province: "",
+  city: "",
+  district: "",
+  postalCode: "",
+  streetAddress: "",
 };
 
 const DEFAULT_ADDONS: AddOns = {
-  photoQc: true,
-  extraBubbleWrap: true,
+  photoQc: false,
+  extraBubbleWrap: false,
 };
 
 const MOCK_QC_DATA: QcInspectionData = {
@@ -277,9 +277,15 @@ export const useCheckoutStore = create<CheckoutState>()(
                 ord.id !== "FP-ORD-882190",
             )
           : [];
+        const isLegacyDummyAddress =
+          persisted.deliveryAddress?.recipientName === "Ahmad Fikri" &&
+          persisted.deliveryAddress?.phone === "+6281299887766";
         return {
           ...currentState,
           ...persisted,
+          deliveryAddress: isLegacyDummyAddress
+            ? DEFAULT_ADDRESS
+            : persisted.deliveryAddress || DEFAULT_ADDRESS,
           orders: cleanOrders,
           currentOrderId:
             persisted.currentOrderId &&

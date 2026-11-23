@@ -4,14 +4,11 @@ import {
   ArrowRight,
   CheckCircle,
   CreditCard,
-  Info,
   Luggage,
-  ShieldAlert,
   Sparkles,
   Truck,
 } from "lucide-react";
 import { Badge } from "@/components/atoms";
-import { BRANDING } from "@/config/branding";
 import { cn, formatIdr } from "@/lib/utils";
 import type { CartItem, ShippingMethod } from "@/types";
 
@@ -58,7 +55,7 @@ export function ResultBiayaCard({
               Result Biaya Pesanan
             </h3>
             <p className="text-[11px] text-[#93C5FD]">
-              Kalkulasi instan berdasarkan opsi pengiriman
+              Ringkasan tagihan produk (Tahap 1)
             </p>
           </div>
         </div>
@@ -118,7 +115,9 @@ export function ResultBiayaCard({
                         {title}
                       </p>
                       <div className="text-[11px] text-[#64748B] font-mono truncate flex items-center gap-1.5">
-                        <span>{variantDesc} • Qty: {item.quantity}</span>
+                        <span>
+                          {variantDesc} • Qty: {item.quantity}
+                        </span>
                         {item.packagingOption === "NO_BOX" ? (
                           <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1 rounded-xs border border-emerald-300 font-bold">
                             No Box
@@ -151,13 +150,15 @@ export function ResultBiayaCard({
             </span>
           </div>
 
-          {/* Fee Handling Konsolidasi */}
-          <div className="flex justify-between items-center text-[#475569]">
-            <span>Handling &amp; Konsolidasi Shanghai:</span>
-            <span className="font-mono font-bold text-[#0F172A]">
-              {formatIdr(serviceFeeIdr)}
-            </span>
-          </div>
+          {/* Fee Handling Konsolidasi (only shown if > 0) */}
+          {serviceFeeIdr > 0 && (
+            <div className="flex justify-between items-center text-[#475569]">
+              <span>Handling &amp; Konsolidasi China:</span>
+              <span className="font-mono font-bold text-[#0F172A]">
+                {formatIdr(serviceFeeIdr)}
+              </span>
+            </div>
+          )}
 
           {/* Selected Shipping Method Line */}
           <div
@@ -176,19 +177,17 @@ export function ResultBiayaCard({
               )}
               <span className="font-semibold text-xs">
                 {isHandcarry
-                  ? `Tiket Handcarry (${totalItemCount} pcs @Rp 95k)`
-                  : "Ongkir Kargo Internasional (All-In)"}
+                  ? `Metode: Handcarry (${totalItemCount} pcs)`
+                  : "Metode: Kargo Internasional"}
               </span>
             </div>
-            <span className="font-mono font-bold text-xs">
-              {formatIdr(
-                isHandcarry ? handcarryShippingFee : cargoEstimatedStage2,
-              )}
+            <span className="font-mono font-bold text-[11px] text-[#1035D0]">
+              Ditagih saat tiba di ID
             </span>
           </div>
 
-          {/* Add-ons if chosen */}
-          {hasPhotoQc && (
+          {/* Add-ons if chosen and > 0 */}
+          {hasPhotoQc && photoQcFee > 0 && (
             <div className="flex justify-between items-center text-[#1035D0]">
               <span className="flex items-center gap-1">
                 <CheckCircle className="w-3.5 h-3.5" /> Photo QC Inspeksi
@@ -200,7 +199,7 @@ export function ResultBiayaCard({
             </div>
           )}
 
-          {hasBubbleWrap && (
+          {hasBubbleWrap && bubbleWrapFee > 0 && (
             <div className="flex justify-between items-center text-[#1035D0]">
               <span className="flex items-center gap-1">
                 <CheckCircle className="w-3.5 h-3.5" /> Extra Bubble Wrap 3
@@ -218,10 +217,10 @@ export function ResultBiayaCard({
           <div className="flex justify-between items-baseline">
             <div>
               <p className="font-sans font-black text-xs text-[#0F172A] uppercase tracking-tight">
-                TOTAL PEMBAYARAN (1X BAYAR)
+                TOTAL PEMBAYARAN TAHAP 1
               </p>
               <p className="text-[11px] text-[#64748B]">
-                Pembayaran All-in (Bebas Biaya Susulan)
+                Harga barang &amp; layanan (ongkir ditagih saat tiba di ID)
               </p>
             </div>
             <div className="text-right">
@@ -232,17 +231,22 @@ export function ResultBiayaCard({
           </div>
         </div>
 
-        {/* ── All-In Notice (Single Payment Guarantee) ───────────── */}
+        {/* ── 2-Stage Payment Notice ─────────────────────────────── */}
         <div className="p-3 bg-[#EFF6FF] rounded-xl border border-[#BFDBFE] text-[11px] text-[#1E40AF] space-y-1">
           <div className="flex items-center gap-1.5 font-bold">
             <Sparkles className="w-3.5 h-3.5 shrink-0 text-[#1035D0]" />
-            <span>1x Pembayaran All-In (Satu Tagihan):</span>
+            <span>Alur Pembayaran 2 Tahap:</span>
           </div>
-          <p className="leading-relaxed text-[#1E3A8A]">
-            Seluruh biaya barang, talangan, inspeksi, dan ongkir internasional
-            dilunasi 1 kali di awal. Tidak ada biaya tagihan terpisah saat barang
-            tiba.
-          </p>
+          <ul className="list-disc pl-4 space-y-1 leading-relaxed text-[#1E3A8A]">
+            <li>
+              <strong>Tahap 1:</strong> Melunasi harga produk agar barang segera
+              dibelikan.
+            </li>
+            <li>
+              <strong>Tahap 2:</strong> Ongkos kirim ditagihkan saat tiba di
+              Indonesia dan siap dikirim ke alamat kamu.
+            </li>
+          </ul>
         </div>
 
         {/* ── Main CTA Button: Lanjut ke Menu Pembayaran ─────────── */}
