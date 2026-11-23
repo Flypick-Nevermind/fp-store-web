@@ -18,7 +18,7 @@ import {
 import { useEffect, useState } from "react";
 import { SubmissionConfirmationModal } from "@/components/intake/submission-confirmation-modal";
 import { Button } from "@/components/ui/button";
-import { cartCheckApi } from "@/lib/api/cart";
+import { cartCheckApi, sanitizeMarketplaceUrl } from "@/lib/api/cart";
 import { formatApiErrorMessage } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/providers/toast-provider";
@@ -152,11 +152,25 @@ export function MultiLinkIntakeForm({ className }: { className?: string }) {
       return;
     }
 
-    const validLinks = links.filter((l) => l.url.trim().length > 0);
+    const validLinks = links
+      .filter((l) => l.url.trim().length > 0)
+      .map((l) => ({
+        ...l,
+        url: sanitizeMarketplaceUrl(l.url),
+      }));
     if (validLinks.length === 0) {
       error(
         "Link Kosong",
         "Masukkan minimal 1 link produk China (Taobao, 1688, dll).",
+      );
+      return;
+    }
+
+    const oversizedIdx = validLinks.findIndex((l) => l.url.length > 500);
+    if (oversizedIdx !== -1) {
+      error(
+        "Link Terlalu Panjang",
+        `Link ke-${oversizedIdx + 1} masih melebihi 500 karakter setelah dibersihkan. Gunakan link produk utama (tanpa teks tambahan).`,
       );
       return;
     }

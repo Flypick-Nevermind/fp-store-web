@@ -18,7 +18,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { BRANDING } from "@/config/branding";
+import { useExchangeRateQuery } from "@/hooks/use-exchange-rate";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/providers/toast-provider";
 import { useAuthStore } from "@/store/use-auth-store";
@@ -86,13 +86,14 @@ export function UserProductRequestsList() {
     setExpandedId((prev) => (prev === id ? null : id));
   };
 
+  const { cnyToIdr } = useExchangeRateQuery();
+
   const handleAddSourcedToCart = (
     req: ProductRequestRecord,
     sourcedItem: SourcingResultItem,
   ) => {
     const cny = sourcedItem.priceCny || 99;
-    const idr =
-      sourcedItem.priceIdr || Math.round(cny * BRANDING.exchangeRate.cnyToIdr);
+    const idr = sourcedItem.priceIdr || Math.round(cny * cnyToIdr);
 
     const cartItem: CartItem = {
       id: `FP-BFM-${req.id.replace(/\D/g, "").slice(-4)}-${Date.now().toString().slice(-4)}`,
@@ -100,7 +101,7 @@ export function UserProductRequestsList() {
       sourceUrl: sourcedItem.url,
       productName: `${sourcedItem.platform} - ${sourcedItem.title}`,
       priceCny: cny,
-      exchangeRate: BRANDING.exchangeRate.cnyToIdr,
+      exchangeRate: cnyToIdr,
       priceIdr: idr,
       selectedVariant: {
         color: req.specificationNotes || "Sesuai Request Sourcing",

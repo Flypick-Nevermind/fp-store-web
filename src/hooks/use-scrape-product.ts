@@ -1,5 +1,10 @@
 import { useMutation } from "@tanstack/react-query";
-import { cartLookupApi, extractCartImageUrl, parsePrice } from "@/lib/api/cart";
+import {
+  cartLookupApi,
+  DEFAULT_PRODUCT_IMAGE,
+  extractCartImageUrl,
+  parsePrice,
+} from "@/lib/api/cart";
 import { ApiError } from "@/lib/api-client";
 import { chinaMarketplaceUrlRegex } from "@/schemas/buy-for-me";
 import { useAuthStore } from "@/store/use-auth-store";
@@ -97,9 +102,7 @@ export function simulateProductScrape(
       resolve({
         productName: sample.productName || "Premium Import Product from China",
         priceCny: sample.priceCny || 150,
-        imageUrl:
-          sample.imageUrl ||
-          "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80",
+        imageUrl: sample.imageUrl || DEFAULT_PRODUCT_IMAGE,
         sourceDomain,
         variants: sample.variants || {
           colors: ["Default Color"],

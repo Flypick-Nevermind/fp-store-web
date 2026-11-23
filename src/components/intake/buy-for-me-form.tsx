@@ -9,11 +9,11 @@ import {
   PackagePlus,
   Sparkles,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BRANDING } from "@/config/branding";
+import { useExchangeRateQuery } from "@/hooks/use-exchange-rate";
 import { useScrapeProductMutation } from "@/hooks/use-scrape-product";
 import { formatApiErrorMessage } from "@/lib/api-client";
 import { formatIdr, generateId } from "@/lib/utils";
@@ -55,6 +55,8 @@ export function BuyForMeForm() {
 
   const scrapeMutation = useScrapeProductMutation();
 
+  const { cnyToIdr } = useExchangeRateQuery();
+
   const {
     register,
     handleSubmit,
@@ -69,7 +71,7 @@ export function BuyForMeForm() {
       sourceUrl: "",
       productName: "",
       priceCny: 0,
-      exchangeRate: BRANDING.exchangeRate.cnyToIdr,
+      exchangeRate: cnyToIdr,
       quantity: 1,
       selectedVariant: {
         color: "",
@@ -79,9 +81,13 @@ export function BuyForMeForm() {
     },
   });
 
+  useEffect(() => {
+    setValue("exchangeRate", cnyToIdr);
+  }, [cnyToIdr, setValue]);
+
   const sourceUrl = watch("sourceUrl");
   const priceCny = watch("priceCny") || 0;
-  const exchangeRate = watch("exchangeRate") || BRANDING.exchangeRate.cnyToIdr;
+  const exchangeRate = watch("exchangeRate") || cnyToIdr;
   const quantity = watch("quantity") || 1;
   const priceIdr = Math.round(priceCny * exchangeRate);
   const totalPriceIdr = priceIdr * quantity;
@@ -141,7 +147,7 @@ export function BuyForMeForm() {
       return;
     }
 
-    const finalRate = values.exchangeRate || BRANDING.exchangeRate.cnyToIdr;
+    const finalRate = values.exchangeRate || cnyToIdr;
     const finalPriceIdr = Math.round((values.priceCny || 0) * finalRate);
     const newItem: BuyForMeItem = {
       ...values,
@@ -163,7 +169,7 @@ export function BuyForMeForm() {
       sourceUrl: "",
       productName: "",
       priceCny: 0,
-      exchangeRate: BRANDING.exchangeRate.cnyToIdr,
+      exchangeRate: cnyToIdr,
       quantity: 1,
       selectedVariant: { color: "", size: "" },
       notes: "",

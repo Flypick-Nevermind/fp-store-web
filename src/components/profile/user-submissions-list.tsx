@@ -17,9 +17,13 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { BRANDING } from "@/config/branding";
 import { useUserCartsQuery } from "@/hooks/use-cart-api";
-import { extractCartImageUrl, parsePrice } from "@/lib/api/cart";
+import { useExchangeRateQuery } from "@/hooks/use-exchange-rate";
+import {
+  DEFAULT_PRODUCT_IMAGE,
+  extractCartImageUrl,
+  parsePrice,
+} from "@/lib/api/cart";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/providers/toast-provider";
 import { useAuthStore } from "@/store/use-auth-store";
@@ -52,6 +56,7 @@ export function UserSubmissionsList() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const addItem = useCartStore((s) => s.addItem);
   const cartItems = useCartStore((s) => s.items);
+  const { cnyToIdr } = useExchangeRateQuery();
 
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -98,7 +103,7 @@ export function UserSubmissionsList() {
       sourceUrl: cart.cart_url,
       productName: cart.cart_title || `${domain} - Pengecekan #${cart.cart_id.slice(0, 8)}`,
       priceCny,
-      exchangeRate: BRANDING.exchangeRate.cnyToIdr,
+      exchangeRate: cnyToIdr,
       priceIdr,
       selectedVariant: {
         color: "Sesuai Pengecekan Admin",
@@ -125,8 +130,8 @@ export function UserSubmissionsList() {
       const q = searchQuery.toLowerCase().trim();
       return (
         c.cart_id.toLowerCase().includes(q) ||
-        (c.cart_title && c.cart_title.toLowerCase().includes(q)) ||
-        (c.cart_url && c.cart_url.toLowerCase().includes(q))
+        c.cart_title?.toLowerCase().includes(q) ||
+        c.cart_url?.toLowerCase().includes(q)
       );
     })
     .sort((a, b) => {
@@ -347,8 +352,10 @@ export function UserSubmissionsList() {
                       className="w-full h-full object-cover"
                       loading="lazy"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80";
+                        const img = e.target as HTMLImageElement;
+                        if (!img.src.endsWith(DEFAULT_PRODUCT_IMAGE)) {
+                          img.src = DEFAULT_PRODUCT_IMAGE;
+                        }
                       }}
                     />
                   </div>

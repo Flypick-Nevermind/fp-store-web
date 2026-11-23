@@ -1,5 +1,6 @@
 import { resolveCartImageUrl } from "@/lib/api/cart";
 import { apiClient } from "@/lib/api-client";
+import { getActiveCnyToIdrRate } from "@/store/use-exchange-rate-store";
 import type {
   CartItem,
   DeliveryAddress,
@@ -210,7 +211,7 @@ export function mapBackendOrderToOrderRecord(
     sourceUrl: detail.product_url,
     productName: detail.product_title || "Produk Import Marketplace China",
     priceCny: 0,
-    exchangeRate: 2350,
+    exchangeRate: getActiveCnyToIdrRate(),
     priceIdr: detail.product_price,
     selectedVariant: {
       color: "Default",

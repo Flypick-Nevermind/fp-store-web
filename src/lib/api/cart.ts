@@ -1,5 +1,5 @@
-import { BRANDING } from "@/config/branding";
 import { apiClient } from "@/lib/api-client";
+import { getActiveCnyToIdrRate } from "@/store/use-exchange-rate-store";
 import type { BuyForMeItem } from "@/types";
 import type {
   CartCheckPayload,
@@ -10,17 +10,16 @@ import type {
   CartWithImagesItem,
 } from "@/types/api";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "https://service-flypick-production.up.railway.app";
+export const DEFAULT_PRODUCT_IMAGE = "/images/default-product.svg";
 
 /**
- * Resolve an image value into a fully qualified image URL.
- * Supports absolute URLs, base64 data URIs, and backend S3 Wasabi object keys via /api/v1/images/media/{key}.
+ * Resolve an image value into a loadable image URL.
+ * Supports external URLs, base64 data URIs, and backend S3 Wasabi object keys
+ * routed via Next.js `/api/v1/images/media/{key}` rewrite.
  */
 export function resolveCartImageUrl(image?: unknown): string {
   if (!image) {
-    return "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80";
+    return DEFAULT_PRODUCT_IMAGE;
   }
 
   let raw = "";
@@ -32,16 +31,39 @@ export function resolveCartImageUrl(image?: unknown): string {
       (typeof obj.cart_image_value === "string" && obj.cart_image_value) ||
       (typeof obj.url === "string" && obj.url) ||
       (typeof obj.file_url === "string" && obj.file_url) ||
+      (typeof obj.image_url === "string" && obj.image_url) ||
       (typeof obj.object_key === "string" && obj.object_key) ||
+      (typeof obj.media_key === "string" && obj.media_key) ||
+      (typeof obj.key === "string" && obj.key) ||
+      (typeof obj.path === "string" && obj.path) ||
+      (typeof obj.value === "string" && obj.value) ||
       "";
+    raw = raw.trim();
   }
 
   if (!raw) {
-    return "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80";
+    return DEFAULT_PRODUCT_IMAGE;
   }
 
-  // Already an absolute URL or data URI
-  if (/^(?:https?:\/\/|data:image\/)/i.test(raw)) {
+  if (/^data:image\//i.test(raw)) {
+    return raw;
+  }
+
+  // If backend/admin stored an absolute URL pointing to our own media endpoint
+  // (or /api-admin/v1/images/media/...), normalize to relative `/api/v1/images/media/...`
+  // so it goes through Next.js rewrites without CORP/CORS or admin-auth issues.
+  if (/^https?:\/\//i.test(raw)) {
+    try {
+      const parsed = new URL(raw);
+      const mediaMatch = parsed.pathname.match(
+        /^\/(?:api|api-admin)\/v1\/images\/media\/(.+)$/,
+      );
+      if (mediaMatch) {
+        return `/api/v1/images/media/${mediaMatch[1]}`;
+      }
+    } catch {
+      // Fall through to return raw URL
+    }
     return raw;
   }
 
@@ -49,25 +71,28 @@ export function resolveCartImageUrl(image?: unknown): string {
   const cleanKey = raw.replace(/^\/+/, "");
 
   if (cleanKey.startsWith("api/v1/images/media/")) {
-    return `${API_BASE_URL}/${cleanKey}`;
+    return `/${cleanKey}`;
   }
 
   if (cleanKey.startsWith("api-admin/v1/images/media/")) {
-    return `${API_BASE_URL}/${cleanKey}`;
+    return `/${cleanKey.replace(/^api-admin\//, "api/")}`;
   }
 
   if (cleanKey.startsWith("images/media/")) {
-    return `${API_BASE_URL}/api/v1/${cleanKey}`;
+    return `/api/v1/${cleanKey}`;
   }
 
-  return `${API_BASE_URL}/api/v1/images/media/${encodeURIComponent(cleanKey)}`;
+  const encodedKey = cleanKey.includes("%")
+    ? cleanKey
+    : encodeURIComponent(cleanKey);
+  return `/api/v1/images/media/${encodedKey}`;
 }
 
 export function extractCartImageUrl(
   images?: (CartImageItem | string)[] | unknown,
 ): string {
   if (!images) {
-    return "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80";
+    return DEFAULT_PRODUCT_IMAGE;
   }
 
   let list: unknown[] = [];
@@ -85,11 +110,14 @@ export function extractCartImageUrl(
     list = [images];
   }
 
-  if (list.length === 0) {
-    return "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80";
+  for (const item of list) {
+    const resolved = resolveCartImageUrl(item);
+    if (resolved !== DEFAULT_PRODUCT_IMAGE) {
+      return resolved;
+    }
   }
 
-  return resolveCartImageUrl(list[0]);
+  return DEFAULT_PRODUCT_IMAGE;
 }
 
 export function parsePrice(priceString?: string): {
@@ -97,7 +125,7 @@ export function parsePrice(priceString?: string): {
   priceCny: number;
 } {
   const raw = parseFloat(priceString || "0") || 0;
-  const rate = BRANDING.exchangeRate.cnyToIdr;
+  const rate = getActiveCnyToIdrRate();
 
   // If >= 1000, consider as IDR, otherwise CNY
   if (raw >= 1000) {
@@ -119,6 +147,7 @@ export function mapLookupResponseToCartItem(
 ): BuyForMeItem {
   const { priceIdr, priceCny } = parsePrice(lookup.cart_price);
   const imageUrl = extractCartImageUrl(lookup.cart_images);
+  const exchangeRate = getActiveCnyToIdrRate();
 
   return {
     id: lookup.cart_id || `FP-ITEM-${Date.now().toString().slice(-6)}`,
@@ -126,7 +155,7 @@ export function mapLookupResponseToCartItem(
     sourceUrl: lookup.cart_url,
     productName: lookup.cart_title || "Produk Import Marketplace China",
     priceCny,
-    exchangeRate: BRANDING.exchangeRate.cnyToIdr,
+    exchangeRate,
     priceIdr,
     selectedVariant: {
       color: "Default Color",
@@ -144,6 +173,7 @@ export function mapCartWithImagesToCartItem(
 ): BuyForMeItem {
   const { priceIdr, priceCny } = parsePrice(apiCart.cart_price);
   const imageUrl = extractCartImageUrl(apiCart.cart_images);
+  const exchangeRate = getActiveCnyToIdrRate();
 
   return {
     id: apiCart.cart_id,
@@ -151,7 +181,7 @@ export function mapCartWithImagesToCartItem(
     sourceUrl: apiCart.cart_url,
     productName: apiCart.cart_title || "Produk Import Marketplace China",
     priceCny,
-    exchangeRate: BRANDING.exchangeRate.cnyToIdr,
+    exchangeRate,
     priceIdr,
     selectedVariant: {
       color: "Default Color",
@@ -164,12 +194,91 @@ export function mapCartWithImagesToCartItem(
   };
 }
 
+const MAX_BACKEND_URL_LENGTH = 500;
+
+const TRACKING_QUERY_PARAMS = new Set([
+  "spm",
+  "utparam",
+  "abbucket",
+  "pvid",
+  "scm",
+  "xxc",
+  "ali_trackid",
+  "ali_refid",
+  "clk1",
+  "upsid",
+  "sourcetype",
+  "from",
+  "share_token",
+  "wx_header",
+  "fbclid",
+  "gclid",
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_term",
+  "utm_content",
+]);
+
+const ESSENTIAL_PRODUCT_PARAMS = new Set([
+  "id",
+  "offerid",
+  "goods_id",
+  "itemid",
+  "skuid",
+  "sku_id",
+  "productid",
+]);
+
+/**
+ * Strips bloated marketplace tracking query parameters when a URL exceeds the
+ * backend's 500-character validation limit while preserving essential product IDs.
+ */
+export function sanitizeMarketplaceUrl(
+  rawUrl: string,
+  maxLength = MAX_BACKEND_URL_LENGTH,
+): string {
+  const trimmed = rawUrl.trim();
+  if (trimmed.length <= maxLength) {
+    return trimmed;
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+
+    for (const key of Array.from(parsed.searchParams.keys())) {
+      if (TRACKING_QUERY_PARAMS.has(key.toLowerCase())) {
+        parsed.searchParams.delete(key);
+      }
+    }
+
+    if (parsed.toString().length <= maxLength) {
+      return parsed.toString();
+    }
+
+    // Still too long: strip hash and keep only essential product-identifying params
+    parsed.hash = "";
+    for (const key of Array.from(parsed.searchParams.keys())) {
+      if (!ESSENTIAL_PRODUCT_PARAMS.has(key.toLowerCase())) {
+        parsed.searchParams.delete(key);
+      }
+    }
+
+    return parsed.toString();
+  } catch {
+    return trimmed;
+  }
+}
+
 export async function cartLookupApi(
   payload: CartLookupPayload,
 ): Promise<CartLookupResponseData> {
   return apiClient<CartLookupResponseData>("/api/v1/lookup", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      ...payload,
+      cart_url: sanitizeMarketplaceUrl(payload.cart_url),
+    }),
   });
 }
 
@@ -187,7 +296,13 @@ export async function cartCheckApi(
 ): Promise<CartCreationResponseData> {
   return apiClient<CartCreationResponseData>("/api/v1/cart/check", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      ...payload,
+      items: payload.items.map((item) => ({
+        ...item,
+        url: sanitizeMarketplaceUrl(item.url),
+      })),
+    }),
     token,
   });
 }

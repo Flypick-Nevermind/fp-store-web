@@ -2,8 +2,8 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { BRANDING } from "@/config/branding";
 import { extractCartImageUrl, parsePrice } from "@/lib/api/cart";
+import { getActiveCnyToIdrRate } from "@/store/use-exchange-rate-store";
 import type { CartWithImagesItem } from "@/types/api";
 import type {
   CreateSubmissionInput,
@@ -129,7 +129,7 @@ export const useSubmissionStore = create<SubmissionState>()(
               const nextPriceIdr =
                 updates.priceIdr ??
                 (nextPriceCny !== undefined
-                  ? Math.round(nextPriceCny * BRANDING.exchangeRate.cnyToIdr)
+                  ? Math.round(nextPriceCny * getActiveCnyToIdrRate())
                   : link.priceIdr);
 
               return {

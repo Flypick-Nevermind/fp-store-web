@@ -1,9 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { BRANDING } from "@/config/branding";
+import { useExchangeRateQuery } from "@/hooks/use-exchange-rate";
 import { useScrapeProductMutation } from "@/hooks/use-scrape-product";
 import { generateId } from "@/lib/utils";
 import { useToast } from "@/providers/toast-provider";
@@ -41,6 +41,8 @@ export function useBuyForMeForm() {
 
   const scrapeMutation = useScrapeProductMutation();
 
+  const { cnyToIdr } = useExchangeRateQuery();
+
   const form = useForm<CreateBuyForMeInput>({
     resolver: zodResolver(CreateBuyForMeInputSchema),
     defaultValues: {
@@ -48,7 +50,7 @@ export function useBuyForMeForm() {
       sourceUrl: "",
       productName: "",
       priceCny: 0,
-      exchangeRate: BRANDING.exchangeRate.cnyToIdr,
+      exchangeRate: cnyToIdr,
       quantity: 1,
       selectedVariant: {
         color: "",
@@ -60,9 +62,13 @@ export function useBuyForMeForm() {
 
   const { setValue, watch, reset } = form;
 
+  useEffect(() => {
+    setValue("exchangeRate", cnyToIdr);
+  }, [cnyToIdr, setValue]);
+
   const sourceUrl = watch("sourceUrl");
   const priceCny = watch("priceCny") || 0;
-  const exchangeRate = watch("exchangeRate") || BRANDING.exchangeRate.cnyToIdr;
+  const exchangeRate = watch("exchangeRate") || cnyToIdr;
   const quantity = watch("quantity") || 1;
   const priceIdr = Math.round(priceCny * exchangeRate);
   const totalPriceIdr = priceIdr * quantity;
@@ -108,7 +114,7 @@ export function useBuyForMeForm() {
   };
 
   const onSubmit = (values: CreateBuyForMeInput) => {
-    const finalRate = values.exchangeRate || BRANDING.exchangeRate.cnyToIdr;
+    const finalRate = values.exchangeRate || cnyToIdr;
     const finalPriceIdr = Math.round((values.priceCny || 0) * finalRate);
     const newItem: BuyForMeItem = {
       ...values,
@@ -129,7 +135,7 @@ export function useBuyForMeForm() {
       sourceUrl: "",
       productName: "",
       priceCny: 0,
-      exchangeRate: BRANDING.exchangeRate.cnyToIdr,
+      exchangeRate: cnyToIdr,
       quantity: 1,
       selectedVariant: { color: "", size: "" },
       notes: "",

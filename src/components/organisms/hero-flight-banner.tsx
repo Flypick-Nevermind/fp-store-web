@@ -1,8 +1,13 @@
+"use client";
+
 import { Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Badge, Barcode, RubberStamp } from "@/components/atoms";
+import { useExchangeRateQuery } from "@/hooks/use-exchange-rate";
 
 export function HeroFlightBanner() {
+  const { cnyToIdr } = useExchangeRateQuery();
+
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="relative bg-[#FFF8E1] border-3 border-[#2323FF] shadow-[8px_8px_0px_0px_#1A1A24] p-6 sm:p-10 overflow-hidden">
@@ -60,7 +65,7 @@ export function HeroFlightBanner() {
 
             <div className="text-center py-2 bg-[#FFF8E1] border border-[#1A1A24]">
               <p className="font-mono text-2xl font-black text-[#2323FF]">
-                1 CNY = Rp 2.250
+                1 CNY = Rp {cnyToIdr.toLocaleString("id-ID")}
               </p>
               <p className="font-mono text-[10px] text-[#1A1A24]/70 mt-0.5">
                 Flat Transparan • Tanpa Biaya Tersembunyi

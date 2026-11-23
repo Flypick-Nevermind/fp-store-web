@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { BRANDING } from "@/config/branding";
+import { getActiveCnyToIdrRate } from "@/store/use-exchange-rate-store";
 import type {
   CreateProductRequestInput,
   ProductCategory,
@@ -100,7 +100,7 @@ export const useProductRequestStore = create<ProductRequestState>()(
         const resultId = `SRC-${Date.now().toString().slice(-6)}`;
         const priceIdr =
           result.priceIdr ||
-          Math.round(result.priceCny * BRANDING.exchangeRate.cnyToIdr);
+          Math.round(result.priceCny * getActiveCnyToIdrRate());
 
         const newItem: SourcingResultItem = {
           id: resultId,

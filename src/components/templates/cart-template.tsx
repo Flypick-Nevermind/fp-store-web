@@ -6,12 +6,13 @@ import { Badge } from "@/components/atoms";
 import { EmptyState } from "@/components/molecules";
 import { CartItemCard } from "@/components/organisms/cart-item-card";
 import { CartSummary } from "@/components/organisms/cart-summary";
-import { BRANDING } from "@/config/branding";
 import { useCartActions } from "@/hooks/use-cart-actions";
+import { useExchangeRateQuery } from "@/hooks/use-exchange-rate";
 import { useToast } from "@/providers/toast-provider";
 
 export function CartTemplate() {
   const { items, clearCart } = useCartActions();
+  const { cnyToIdr } = useExchangeRateQuery();
   const { info } = useToast();
 
   const handleClearCart = () => {
@@ -94,8 +95,7 @@ export function CartTemplate() {
                   KURS CNY AKTIF:
                 </span>
                 <span className="text-[#1035D0] font-black">
-                  ¥1 CNY = Rp{" "}
-                  {BRANDING.exchangeRate.cnyToIdr.toLocaleString("id-ID")}
+                  ¥1 CNY = Rp {cnyToIdr.toLocaleString("id-ID")}
                 </span>
               </div>
               <div className="flex gap-2">
