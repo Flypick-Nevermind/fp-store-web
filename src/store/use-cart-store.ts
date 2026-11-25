@@ -12,6 +12,7 @@ interface CartState {
     id: string,
     packagingOption: "WITH_BOX" | "NO_BOX",
   ) => void;
+  recalculateExchangeRate: (newRate: number) => void;
   clearCart: () => void;
   isItemDismissed: (id: string) => boolean;
 
@@ -123,6 +124,21 @@ export const useCartStore = create<CartState>()(
             (item): item is BuyForMeItem => item.serviceType === "BUY_FOR_ME",
           )
           .reduce((acc, item) => acc + item.priceCny * item.quantity, 0);
+      },
+
+      recalculateExchangeRate: (newRate) => {
+        if (!Number.isFinite(newRate) || newRate <= 0) return;
+        const roundedRate = Math.round(newRate);
+        set((state) => ({
+          items: state.items.map((item) => {
+            if (item.serviceType !== "BUY_FOR_ME") return item;
+            return {
+              ...item,
+              exchangeRate: roundedRate,
+              priceIdr: Math.round(item.priceCny * roundedRate),
+            };
+          }),
+        }));
       },
     }),
     {

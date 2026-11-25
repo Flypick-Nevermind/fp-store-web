@@ -138,7 +138,8 @@ export async function apiClient<T>(
 
   const url = endpoint.startsWith("http")
     ? endpoint
-    : typeof window !== "undefined" && endpoint.startsWith("/api/")
+    : typeof window !== "undefined" &&
+        (endpoint.startsWith("/api/") || endpoint.startsWith("/api-admin/"))
       ? endpoint
       : `${API_BASE_URL}${endpoint}`;
 
